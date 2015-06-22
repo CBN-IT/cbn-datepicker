@@ -4,3 +4,7 @@ dist/
 .sass-cache
 .tmp
 bower_components/
+*.iml
+/.idea/
+npm_debug.log
+target/

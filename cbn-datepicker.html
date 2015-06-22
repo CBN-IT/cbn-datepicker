@@ -1,40 +1,470 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
-<link rel="import" href="../paper-shadow/paper-shadow.html">
 <link rel="import" href="../paper-input/paper-input.html">
-<link rel="import" href="../core-icons/core-icons.html">
-<link rel="import" href="../core-field/core-field.html">
-<link rel="import" href="../core-selector/core-selector.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
 
 <script src="../moment/moment.js"></script>
-<script src="../moment-range/lib/moment-range.js"></script>
+<script src="../moment-range/dist/moment-range.js"></script>
 
-<polymer-element name="cbn-datepicker">
-  <template>
-    <link rel="stylesheet" href="cbn-datepicker.css">
-      <paper-input id="input" floatingLabel label="Set date" value="{{ date }}" on-focus="{{open}}" on-blur="{{close}}" flex></paper-input>
+<dom-module id="cbn-datepicker">
+    <link rel="import" type="css" href="cbn-datepicker.css">
 
-      <div id="calendar" on-mousedown="{{refocusInput}}"  vertical layout center-justified>
-        <paper-shadow z="1" fit></paper-shadow>
-        <div class="calendar-head" layout horizontal>
-          <paper-icon-button recenteringTouch="true" class="icon" icon="arrow-back" on-tap="{{ prev }}"></paper-icon-button>
-          <paper-button recenteringTouch="true" flex class="colored header {{ {'hidden': header1.length==0} | tokenList}}" on-tap="{{ nextViewBy1 }}">{{ header1 }}</paper-button>
-          <paper-button recenteringTouch="true" flex class="colored header {{ {'hidden': header2.length==0} | tokenList}}" on-tap="{{ nextViewBy2 }}">{{ header2 }}</paper-button>
-          <paper-icon-button recenteringTouch="true" class="icon" icon="arrow-forward" on-tap="{{ next }}"></paper-icon-button>
+    <template>
+      <paper-input id="input" floatingLabel label="Set date" value="{{ date }}" flex></paper-input>
+
+      <div id="calendar" on-mousedown="refocusInput"  vertical layout center-justified>
+        <div class="calendar-head">
+          <paper-icon-button class="icon" icon="arrow-back" on-tap="prev"></paper-icon-button>
+          <paper-button class$="{{_headerClass(header1)}}" on-tap="nextViewBy1">{{ header1 }}</paper-button>
+          <paper-button class$="{{_headerClass(header2)}}" on-tap="nextViewBy2">{{ header2 }}</paper-button>
+          <paper-icon-button class="icon" icon="arrow-forward" on-tap="next"></paper-icon-button>
         </div>
-        <core-selector valueattr="data-value" selected="{{ item }}" target="{{$.content}}" itemsSelector=".active"></core-selector>
         <div id="content" horizontal layout wrap justified>
-          <template id="days" repeat="{{ it in items }}">
-            <paper-button recenteringTouch="true" class="{{ type }} {{ it.cl }}" data-value="{{ it.val }}" on-tap="{{ setItem }}">{{ it.label }}</paper-button>
+          <template is="dom-repeat" items="{{items}}">
+              <paper-button class$="{{item.cl}}" value$="{{item.val}}" on-tap="setItem">{{item.label}}</paper-button>
           </template>
         </div>
         <div layout horizontal>
-          <paper-icon-button class="icon" style="color: #4285f4;" icon="today" on-tap="{{ goToday }}">Today</paper-icon-button>
+          <paper-icon-button class="icon" style="color: #4285f4;" icon="today" on-tap="goToday">Today</paper-icon-button>
           <span flex></span>
-          <paper-icon-button class="icon" style="color: red" icon="clear" on-tap="{{ clear }}">Clear</paper-icon-button>
+          <paper-icon-button class="icon" style="color: red" icon="clear" on-tap="clear">Clear</paper-icon-button>
         </div>
       </div>
   </template>
-  <script src="cbn-datepicker.js"></script>
-</polymer-element>
+</dom-module>
+<script>
+    Polymer({
+        is: "cbn-datepicker",
+        properties: {
+            /**
+             * The `format` attribute details http://momentjs.com/docs/#/parsing/string-format/.
+             *
+             * @attribute format
+             * @type string
+             */
+            format: {
+                type: String,
+                value: "DD MMMM YYYY",
+                observer: "formatChanged"
+            },
+            date: {
+                type: String,
+                value: null,
+                observer: "updateNowDate"
+            },
+            minDate: {
+                type: String,
+                value: null,
+                observer: "_updateMinDate"
+            },
+            maxDate: {
+                type: String,
+                value: null,
+                observer: "_updateMaxDate"
+            },
+            position: {
+                type: String,
+                value: "right",
+                observer: "positionChanged"
+            },
+            items: {
+                type: Array,
+                value: function () {
+                    return [];
+                },
+                readOnly: true
+            }
+        },
+        _focusableInput: null,
+        _refocus: false,
+        created: function () {
+            //this.items = [];
+            this.viewItems = [
+                "year", "month", "day"
+            ];
+            this.views = {
+                Days: {
+                    item: 'day',
+                    heading: 'month'
+                },
+                Months: {
+                    item: 'month',
+                    heading: 'year'
+                },
+                Years: {
+                    item: 'year',
+                    heading: 'years'
+                }
+            };
+            this.updateNowDate = function(){
+                this.debounce("updateNowDate",this._updateNowDate, 0);
+            };
+        },
+        ready: function () {
+            var that = this;
+            this._focusableInput = Polymer.dom(this.$.input.root).querySelector("input");
+
+            /*hack cause on-focus and on-blur only works for shadow down, not shady dom*/
+            this._focusableInput.addEventListener("focus", function (e) {
+                that.openDialog(Polymer.dom(e));
+            });
+            this._focusableInput.addEventListener("blur", function (e) {
+                that.closeDialog(Polymer.dom(e));
+            });
+            if (this.date != null && this.date != "") {
+                this.now = (this.date) ? this._processDate(this.date) : null;
+                this.view = 'Days';
+                this.updateDate();
+                this.updateItem();
+                this._updateInputDate();
+            } else {
+                this.now = moment();
+                this.view = 'Days';
+                this.updateDate();
+            }
+            this.positionChanged();
+            //this._render();
+        },
+        formatChanged: function () {
+
+        },
+        positionChanged: function () {
+            this.$.calendar.classList.remove("left");
+            this.$.calendar.classList.remove("right");
+            this.$.calendar.classList.remove("top");
+            this.$.calendar.classList.remove("bottom");
+            var cl = this.position.split(/ /g);
+            for (var i in cl) {
+                if (cl[i] != null && cl[i].length > 0) {
+                    this.$.calendar.classList.add(cl[i]);
+                }
+            }
+        },
+        _headerClass: function (headerVal) {
+            if (headerVal.length == 0) {
+                return "colored header hidden"
+            } else {
+                return "colored header"
+            }
+        },
+        goToday: function () {
+            this.now = moment();
+            this.view = 'Days';
+            this.updateDate();
+            this._render();
+        },
+        undo: function () {
+            this.now = this.savedDate;
+            this.date = this.now;
+            this.closeDialog();
+        },
+        clear: function () {
+            this.now = null;
+            this.date = this.now;
+            this.updateDate();
+            this.updateItem();
+            this.closeDialog();
+        },
+        done: function () {
+            this.closeDialog();
+        },
+
+        refocusInput: function () {
+            this._refocus = true;
+        },
+        openDialog: function () {
+            if (this.now == null) {
+                this.now = moment();
+                this.view = 'Days';
+                this.updateDate();
+            }
+            this.$.calendar.classList.add("show");
+        },
+        closeDialog: function () {
+            if (this._refocus) {
+                this._refocus = false;
+                this._focusableInput.focus();
+            } else {
+                //this.$.calendar.classList.remove("show");
+            }
+        },
+        prev: function () {
+            console.log("prev");
+            this.now = this.now.clone().subtract(1, this.views[this.view].heading);
+            this.updateDate();
+        },
+        next: function () {
+            this.now = this.now.clone().add(1, this.views[this.view].heading);
+            this.updateDate();
+        },
+        nextViewBy1: function () {
+            console.log("next");
+            var keys = Object.keys(this.views),
+                    view = keys[keys.indexOf(this.view) + 1];
+            this.view = view || this.view;
+            this._render();
+        },
+        nextViewBy2: function () {
+            console.log("next2");
+            var keys = Object.keys(this.views),
+                    view = keys[keys.indexOf(this.view) + 2];
+            this.view = view || this.view;
+            this._render();
+        },
+        prevView: function () {
+            var keys = Object.keys(this.views),
+                    view = keys[keys.indexOf(this.view) - 1];
+            this.view = view || this.view;
+            this._render();
+        },
+        setItem: function (e, d) {
+            var el = Polymer.dom(e).localTarget;
+            if (el.className.indexOf('active') === -1) {
+                return;
+            }
+            var itemValue = el.getAttribute("value");
+            console.log(itemValue);
+            var dateElems = itemValue.split(/-/g);
+
+            for (var i in dateElems) {
+                this[this.viewItems[i]] = dateElems[i];
+            }
+            this.setNowDate();
+            if (dateElems.length === 3) {
+                this._updateInputDate();
+                this.closeDialog();
+                return;
+            }
+            this.prevView();
+
+        },
+
+        render: function () {
+            console.log("render");
+            this.setNowDate();
+            this['set' + this.view]();
+            this.header1 = this[this.views[this.view].heading];
+            if (this.views[this.view].heading === "month") {
+                this.header2 = this["year"]
+            } else {
+                this.header2 = "";
+            }
+        },
+        _render: function(){
+          this.debounce("render", this.render, 0);
+        },
+        _updateNowDate: function () {
+            var now = this.date ? this._processDate(this.date) : null;
+            if (now == null || !now.isValid()) {
+                return;
+            }
+            this.now = now;
+            this.updateDate();
+        },
+        _updateMinDate: function () {
+            this.minDate = this._processDate(this.minDate);
+        },
+        _updateMaxDate: function () {
+            this.maxDate = this._processDate(this.maxDate);
+        },
+        _processDate: function (date) {
+            var d = null;
+            if (date != null) {
+                if (typeof date === "string") {
+                    var pattern = /([+\-]?[0-9]+)\s*(d|D|w|W|m|M|y|Y|q|Q)/g,
+                            matches = pattern.exec(date);
+                    if (matches) {
+                        var now = moment().startOf("day");
+
+                        while (matches) {
+                            switch (matches[2] || "d") {
+                                case "d" :
+                                case "D" :
+                                    now.add(parseInt(matches[1], 10), "d");
+                                    break;
+                                case "w" :
+                                case "W" :
+                                    now.add(parseInt(matches[1], 10), "w");
+                                    break;
+                                case "m" :
+                                case "M" :
+                                    now.add(parseInt(matches[1], 10), "M");
+                                    break;
+                                case "q" :
+                                case "Q" :
+                                    now.add(parseInt(matches[1], 10), "Q");
+                                    break;
+                                case "y":
+                                case "Y" :
+                                    now.add(parseInt(matches[1], 10), "y");
+                                    break;
+                            }
+                            matches = pattern.exec(date);
+                        }
+                        d = now;
+                    } else {
+                        d = moment(date, this.format);
+                    }
+                } else {
+                    d = date;
+                }
+            }
+            return d;
+        },
+        _updateInputDate: function () {
+            if (this.now == null) {
+                this.date = null;
+            } else {
+                this.date = this.now.format(this.format);
+            }
+        },
+        setNowDate: function () {
+            console.log("setNowDate");
+            var now = moment([this.day, this.month, this.year].join(' '), 'D MMM YYYY');
+            if (now.isValid()) {
+                this.now = now;
+            } else if (this.day > moment(this.month, 'MMM').daysInMonth()) {
+                this.day = moment(this.month, 'MMM').daysInMonth();
+            }
+        },
+        updateDate: function () {
+            if (this.now == null) {
+            } else {
+                this.day = this.now.format('D');
+                this.month = this.now.format('MMM');
+                this.year = this.now.format('YYYY');
+                this._render();
+            }
+        },
+        updateItem: function () {
+            if (this.now == null) {
+                this.item = "";
+                return;
+            }
+            var tempItem = [];
+            for (var i in this.viewItems) {
+                tempItem.push(this[this.viewItems[i]]);
+
+                if (this.view == this.viewItems[i]) {
+                    break;
+                }
+            }
+            this.item = tempItem.join("-");
+        },
+        getDayNames: function () {
+            var start = moment().day(0);
+            var end = moment().day(6);
+            var days = [];
+            moment().range(start, end)
+                    .by('days', function (moment) {
+                        days.push({
+                            val: moment.format('dd'),
+                            label: moment.format('dd'),
+                            cl: 'heading days'
+                        });
+                    });
+            return days;
+        },
+        _oldStart : null,
+        _oldEnd: null,
+        setDays: function () {
+            console.log("setDays");
+            var start = this.now.clone().startOf('month').day(0);
+            var end = this.now.clone().endOf('month').day(6);
+            //cache the start and end not to refresh the items when they don't need to
+            if (this._oldStart != null && this._oldStart.format("YYYY-MMM-D") == start.format("YYYY-MMM-D") &&
+                    this._oldEnd != null && this._oldEnd.format("YYYY-MMM-D") == end.format("YYYY-MMM-D")) {
+                console.log("cachedSetDays");
+                return;
+            }
+            this._oldStart = start;
+            this._oldEnd = end;
+
+            var that = this;
+            var dayNames = this.getDayNames();
+
+
+            var month = this.now.month();
+            this.type = 'days';
+            var minDate = this.minDate;
+            var maxDate = this.maxDate;
+            moment().range(start, end)
+                    .by('days', function (momentParam) {
+                        var cl = that.type + " ";
+                        if ((minDate != null && minDate.isAfter(momentParam)) ||
+                                (maxDate != null && maxDate.isBefore(momentParam))) {
+                            cl += "fade";
+                        } else if (momentParam.month() === month) {
+                            cl += 'active';
+                        } else {
+                            cl += 'active fade';
+                        }
+                        if (moment().startOf("day").diff(momentParam.startOf("day"), 'days') === 0) {
+                            cl += " today";
+                        }
+                        dayNames.push( {
+                            val: momentParam.format('YYYY-MMM-D'),
+                            label: momentParam.format('D'),
+                            cl: cl
+                        });
+
+                    });
+            dayNames.unshift("items", 0, that.items.length);
+            that.splice.apply(that, dayNames);
+        },
+        setMonths: function () {
+            var start = this.now.clone().startOf('year');
+            var end = this.now.clone().endOf('year');
+            var that = this;
+            that.splice("items", 0, that.items.length);
+
+            this.type = 'months';
+            var minDate = this.minDate;
+            var maxDate = this.maxDate;
+            moment().range(start, end)
+                    .by('months', function (moment) {
+                        var cl = that.type + " ";
+                        if ((minDate != null && minDate.isAfter(moment.clone().endOf('month'))) ||
+                                (maxDate != null && maxDate.isBefore(moment.clone().startOf('month')))) {
+                            cl += "fade";
+                        } else {
+                            cl += 'active';
+                        }
+                        that.push("items", {
+                            val: moment.format('YYYY-MMM'),
+                            label: moment.format('MMM'),
+                            cl: cl
+                        });
+                    });
+        },
+        setYears: function () {
+            var start = this.now.clone().subtract(12, 'year');
+            var end = this.now.clone().add(22, 'year');
+            var that = this;
+            that.splice("items", 0, that.items.length);
+
+            if (this.minDate != null && start.isBefore(this.minDate)) {
+                start = this.minDate;
+            }
+            if (this.maxDate != null && end.isAfter(this.maxDate)) {
+                end = this.maxDate;
+            }
+            this.years = [start.format('YYYY'), end.format('YYYY')].join('-');
+            this.type = 'years';
+            moment().range(start, end)
+                    .by('years', function (moment) {
+                        var cl = that.type + " " +'active';
+                        that.push("items",{
+                            val: moment.format('YYYY'),
+                            label: moment.format('YYYY'),
+                            cl: cl
+                        });
+                    });
+        }
+    });
+    function cacheResponse(){
+        var response = null;
+
+    }
+</script>
