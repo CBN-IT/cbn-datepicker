@@ -25,7 +25,6 @@
     text-align: center;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     z-index: 1;
-    @apply(--shadow-elevation-2dp);
 }
 
 #calendar.show {
@@ -36,24 +35,19 @@
     background: inherit;
     color: inherit;
     font-size: 1em;
-    @apply(--layout-horizontal);
 }
 
 #content {
     margin-bottom: 2px;
-    @apply(--layout-horizontal);
-    @apply(--layout-wrap);
-    @apply(--layout-justified);
 }
 
-paper-button.header {
+.header {
     text-align: center;
     min-width: initial;
-    height: 40px;
-    @apply(--layout-flex);
+    height: 40px
 }
 
-paper-button.days {
+.days {
     border-radius: 50%;
     width: 32px;
     height: 32px;
@@ -69,7 +63,7 @@ paper-button.days {
     color: #c9c9c9;
 }
 
-paper-button.months {
+.months {
     border-radius: 50%;
     width: 50px;
     min-width: initial;
@@ -81,7 +75,7 @@ paper-button.months {
     font-size: 12px;
 }
 
-paper-button.years {
+.years {
     border-radius: 50%;
     width: 40px;
     min-width: initial;
