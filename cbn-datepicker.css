@@ -1,6 +1,5 @@
 :host {
-    display: block;
-    max-width: 200px;
+    display: inline-block;
     margin: 0 3px;
     position: relative;
 }
@@ -9,8 +8,13 @@
     position: relative;
 }
 
-#date-input {
-    padding: 6px;
+#container {
+	outline: none;
+}
+
+#input {
+    display: block;
+	width: auto;
 }
 
 #calendar {
@@ -89,7 +93,10 @@
 
 .days.core-selected,
 .months.core-selected,
-.years.core-selected {
+.years.core-selected,
+.days.fade.core-selected, 
+.days.fade.core-selected {
+	color: #222;
     background-color: #c9c9c9;
 }
 
@@ -113,18 +120,17 @@ paper-icon-button.icon {
 
 #calendar.bottom {
     top: 100%
+	margin-top: 2px;
 }
-
 #calendar.top {
     bottom: 100%;
+	margin-bottom: 2px;
 }
-
 #calendar.right {
     left: 100%;
     top: 0;
     margin-left: 10px;
 }
-
 #calendar.left {
     right: 100%;
     top: 0;

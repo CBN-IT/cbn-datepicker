@@ -1,15 +1,24 @@
 {
-  "name": "cbn-datepicker",
-  "version": "0.1.0",
-  "dependencies": {
-    "polymer": "Polymer/polymer#^0.5",
-    "core-selector": "Polymer/core-selector#^0.5",
-    "paper-shadow": "Polymer/paper-shadow#^0.5",
-    "paper-icon-button": "Polymer/paper-icon-button#^0.5",
-    "paper-input": "Polymer/paper-input#^0.5",
-    "core-icons": "Polymer/core-icons#^0.5",
-    "core-field": "Polymer/core-field#^0.5",
-    "moment": "~2.10.3",
-    "moment-range": "~1.0.9"
-  }
+    "name": "cbn-datepicker",
+    "version": "0.1.0",
+    "dependencies": {
+        "polymer": "Polymer/polymer#^0.5",
+        "core-selector": "Polymer/core-selector#^0.5",
+        "paper-shadow": "Polymer/paper-shadow#^0.5",
+        "paper-button": "Polymer/paper-button#^0.5",
+        "paper-icon-button": "Polymer/paper-icon-button#^0.5",
+        "paper-input": "Polymer/paper-input#^0.5",
+        "core-input": "Polymer/core-input#^0.5",
+        "core-icons": "Polymer/core-icons#^0.5",
+        "core-field": "Polymer/core-field#^0.5",
+        "moment": "^2.10",
+        "moment-range": "^1.0",
+        "cbn-form": "git@bitbucket.org:cbn-it/cbn-form.git#master"
+    },
+    "devDependencies": {
+        "core-component-page": "Polymer/core-component-page#^0.5",
+        "web-component-tester": "Polymer/web-component-tester",
+        "cbn-input": "git@bitbucket.org:cbn-it/cbn-input.git#master",
+        "cbn-grid": "git@bitbucket.org:cbn-it/cbn-grid.git#master"
+    }
 }
