@@ -49,6 +49,14 @@
 			value: '',
 			
 			/**
+			 * A placeholder to show when the value is empty.
+			 * 
+			 * @attribute placeholder
+			 * @type {String}
+			 */
+			placeholder: '',
+			
+			/**
 			 * The `format` attribute details http://momentjs.com/docs/#/parsing/string-format/.
 			 *
 			 * @attribute format
@@ -105,7 +113,8 @@
 			"format": {type: 'attribute'},
 			"minDate": {type: 'attribute'},
 			"maxDate": {type: 'attribute'},
-			"position": {type: 'attribute'}
+			"position": {type: 'attribute'},
+			"placeholder": {type: 'attribute'}
 		},
 		
 		// Private properties

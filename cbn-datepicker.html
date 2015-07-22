@@ -19,9 +19,9 @@
 		
 		<div id="container" tabindex="-1" on-mousedown="{{_refocusInput}}">
 			
-			<input is="core-input" id="input" floatingLabel title="{{ title }}" on-input="{{ _inputTyped }}"
-				   value="{{ _displayValue }}" committedValue="{{ value }}" 
-				   on-focus="{{open}}" on-blur="{{ _inputBlur }}" flex />
+			<input is="core-input" id="input" placeholder="{{placeholder}}" title="{{ title }}" 
+				   on-input="{{ _inputTyped }}" on-focus="{{open}}" on-blur="{{ _inputBlur }}"
+				   value="{{ _displayValue }}" committedValue="{{ value }}" flex />
 			
 			<div id="calendar" vertical layout center-justified>
 				<paper-shadow z="1" fit></paper-shadow>
