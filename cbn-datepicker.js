@@ -58,11 +58,21 @@
 			
 			/**
 			 * The `format` attribute details http://momentjs.com/docs/#/parsing/string-format/.
-			 *
+			 * 
 			 * @attribute format
 			 * @type {String}
 			 */
 			format: 'DD MMMM YYYY',
+			
+			/**
+			 * The format to use for the input's model value ({@link #value} attribute).
+			 * If the value format is empty, then {@link #format} will be used.
+			 * 
+			 * 
+			 * @attribute valueFormat
+			 * @type {String}
+			 */
+			valueFormat: 'x',
 			
 			/**
 			 * Specifies the minimum end of the calendar's date interval.
@@ -675,7 +685,7 @@
 			if (!this._date || !this._date.isValid()) {
 				this._date = null;
 			}
-			this._displayValue = this.value;
+			this._displayValue = (this._date ? this._date.format(this.format) : '' );
 		},
 		
 		/**
@@ -683,8 +693,8 @@
 		 * @private
 		 */
 		_updateValue: function() {
-			this.value = ( this._date ? this._date.format(this.format) : '' );
-			this._displayValue = this.value;
+			this.value = ( this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '' );
+			this._displayValue = (this._date ? this._date.format(this.format) : '' );
 		},
 		
 		/**
@@ -733,7 +743,7 @@
 						}
 						
 					} else {
-						date = moment(dateStr, this.format);
+						date = moment(dateStr, [ this.valueFormat, this.format ]);
 					}
 				} else {
 					date = moment(date);
