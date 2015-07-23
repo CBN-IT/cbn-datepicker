@@ -72,7 +72,7 @@
 			 * @attribute valueFormat
 			 * @type {String}
 			 */
-			valueFormat: 'x',
+			valueFormat: 'YYYY-MM-DD',
 			
 			/**
 			 * Specifies the minimum end of the calendar's date interval.
