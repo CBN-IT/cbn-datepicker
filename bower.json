@@ -11,9 +11,8 @@
         "core-input": "Polymer/core-input#^0.5",
         "core-icons": "Polymer/core-icons#^0.5",
         "core-field": "Polymer/core-field#^0.5",
-        "moment": "^2.10",
-        "moment-range": "^1.0",
-        "cbn-form": "git@bitbucket.org:cbn-it/cbn-form.git#master"
+        "cbn-form": "git@bitbucket.org:cbn-it/cbn-form.git#master",
+        "cbn-momentjs": "git@bitbucket.org:cbn-it/cbn-momentjs.git#master"
     },
     "devDependencies": {
         "core-component-page": "Polymer/core-component-page#^0.5",
