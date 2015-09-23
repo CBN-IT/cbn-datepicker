@@ -1,65 +1,60 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../cbn-form/cbn-form-abstract.html">
+<link rel="import" href="../cbn-form/lib/include.html">
+<link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
+
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../iron-icon/iron-icon.html" />
+<link rel="import" href="../iron-icons/iron-icons.html" />
 
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
-<link rel="import" href="../paper-shadow/paper-shadow.html">
 <link rel="import" href="../paper-input/paper-input.html">
-<link rel="import" href="../core-input/core-input.html">
-<link rel="import" href="../core-icons/core-icons.html">
-<link rel="import" href="../core-field/core-field.html">
-<link rel="import" href="../core-selector/core-selector.html">
-<link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
 
+<link rel="import" href="styles.html">
 
-<polymer-element name="cbn-datepicker">
+<dom-module id="cbn-datepicker">
 	<template>
-		<link rel="stylesheet" href="cbn-datepicker.css">
+		<style include="cbn-datepicker-styles-private"></style>
 		
-		<div id="container" tabindex="-1" on-mousedown="{{_refocusInput}}">
+		<div id="container" tabindex="-1" on-mousedown="_refocusInput">
 			
-			<input is="core-input" id="input" placeholder="{{placeholder}}" title="{{ title }}" 
-				   on-input="{{ _inputTyped }}" on-focus="{{open}}" on-blur="{{ _inputBlur }}"
-				   value="{{ _displayValue }}" committedValue="{{ value }}" flex />
+			<input is="iron-input" id="input" placeholder$="[[placeholder]]" title="[[title]]" 
+				   on-focus="open" on-tap="open" 
+				   on-input="_inputValueChanged" on-keypress="_inputKeyPress"
+				   bind-value="{{_displayValue}}" />
 			
-			<div id="calendar" vertical layout center-justified>
-				<paper-shadow z="1" fit></paper-shadow>
-				
-				<div class="calendar-head" layout horizontal>
+			<div id="calendar" class$="[[_computeCalendarClasses(_open, _positions)]]">
+				<div class="calendar-head">
 					<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-back"
-									   on-tap="{{ _navigatePrev }}"></paper-icon-button>
+									   on-tap="_navigatePrev"></paper-icon-button>
 					
-					<paper-button recenteringTouch="true" flex
-								  class="colored header {{ {'hidden': !_displayHeaderL } | tokenList}}"
-								  on-tap="{{ _navigateHeaderL }}">{{ _displayHeaderL }}</paper-button>
-					<paper-button recenteringTouch="true" flex
-								  class="colored header {{ {'hidden': !_displayHeaderR } | tokenList}}"
-								  on-tap="{{ _navigateHeaderR }}">{{ _displayHeaderR }}</paper-button>
+					<paper-button class$="[[_computeHeaderClasses(_displayHeaderL)]]"
+								  on-tap="_navigateHeaderL">{{ _displayHeaderL }}</paper-button>
+					<paper-button class$="[[_computeHeaderClasses(_displayHeaderR)]]"
+								  on-tap="_navigateHeaderR">{{ _displayHeaderR }}</paper-button>
 					
 					<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-forward"
-									   on-tap="{{ _navigateNext }}"></paper-icon-button>
+									   on-tap="_navigateNext"></paper-icon-button>
 				</div>
 				
-				<core-selector id="selector" valueattr="data-value" selected="{{ _displaySelectedItem }}" target="{{$.content}}"
-							   on-core-activate="{{ _itemSelected }}" itemsSelector=".active"></core-selector>
-				
-				<div id="content" horizontal layout wrap justified>
-					<template id="days" repeat="{{ it in _displayItems }}">
-						<paper-button recenteringTouch="true" class="{{ it.cl }}" 
-									  data-value="{{ it.val }}">{{ it.label }}</paper-button>
+				<div id="content">
+					<template is="dom-repeat" id="days" items="[[_displayItems]]" as="item">
+						<paper-button class$="[[_computeItemClasses(item, _displaySelectedItem)]]" 
+									  on-tap="_selectItem">[[item.label]]</paper-button>
 					</template>
 				</div>
 				
-				<div layout horizontal>
+				<div id="buttons">
 					<paper-icon-button class="icon" style="color: #4285f4;" icon="today" 
-									   on-tap="{{ setToday }}">Today</paper-icon-button>
-					<span flex></span>
+									   on-tap="setToday">Today</paper-icon-button>
+					<span class="separator"></span>
 					<paper-icon-button class="icon" style="color: red" icon="clear" 
-									   on-tap="{{ clear }}">Clear</paper-icon-button>
+									   on-tap="clear">Clear</paper-icon-button>
 				</div>
 			</div>
 		</div>
 		
 	</template>
-	<script src="cbn-datepicker.js"></script>
-</polymer-element>
+</dom-module>
+
+<script src="cbn-datepicker.js"></script>
