@@ -9,6 +9,7 @@
 	<link rel="import" href="../../cbn-form/cbn-form.html">
 	<link rel="import" href="../../iron-input/iron-input.html">
 	<link rel="import" href="../cbn-datepicker.html">
+	<link rel="import" href="../cbn-paper-datepicker.html">
 	
 </head>
 <body>
@@ -23,27 +24,28 @@
 			<h3>Basic style: </h3>
 			
 			<p>
-			<cbn-datepicker name="first" defaultValue="+3d" minDate="-1m" maxDate="+3y" position=""></cbn-datepicker>
+				<cbn-datepicker name="first" defaultValue="+3d" minDate="-1m" maxDate="+3y"></cbn-datepicker>
 			</p>
 			<p>
-			<cbn-datepicker name="second" position="auto bottom"></cbn-datepicker>
+				<cbn-datepicker name="second" position="auto bottom"></cbn-datepicker>
 			</p>
 			<p>
-			<cbn-datepicker name="third" position="auto left"></cbn-datepicker>
+				<cbn-datepicker name="third" position="auto left"></cbn-datepicker>
 			</p>
 			<p>
-			<cbn-datepicker name="fourth" position="auto right"></cbn-datepicker>
+				<cbn-datepicker name="fourth" position="auto right"></cbn-datepicker>
 			</p>
 			<p>
-			<cbn-datepicker name="fifth" position="auto top"></cbn-datepicker>
+				<cbn-datepicker name="fifth" position="auto top"></cbn-datepicker>
 			</p>
 			
 			<h3>Paper style: </h3>
 			
-			
+			<cbn-paper-datepicker label="Date" name="fifth" position="auto top"></cbn-paper-datepicker>
 			
 		</form>
 		
+		<br />
 		<p style="font-weight: bold;">Output: </p>
 		<pre id="stringifiedJson"></pre>
 		

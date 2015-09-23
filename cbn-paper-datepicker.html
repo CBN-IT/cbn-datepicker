@@ -1,0 +1,159 @@
+<!--
+`<cbn-paper-select>` is a paper-styled variant of `<cbn-select>`.
+
+Usage:
+    <cbn-paper-select label="Select label"></cbn-paper-select>
+
+See `Polymer.PaperInputBehavior` and `<cbn-select>` for API docs.
+
+### Styling
+
+See `Polymer.PaperInputContainer` for a list of custom properties used to
+style this element.
+
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-input/paper-input-behavior.html">
+<link rel="import" href="../paper-input/paper-input-container.html">
+<link rel="import" href="../paper-input/paper-input-error.html">
+<link rel="import" href="cbn-datepicker.html">
+
+<dom-module id="cbn-paper-datepicker">
+	<template>
+		<style>
+			:host {
+				display: block;
+			}
+		</style>
+		
+		<paper-input-container id="container" no-label-float$="[[noLabelFloat]]" attr-for-value="value"
+							   always-float-label="[[_computeAlwaysFloatLabel(alwaysFloatLabel,placeholder)]]"
+							   auto-validate$="[[autoValidate]]" disabled$="[[disabled]]" invalid="[[invalid]]">
+			
+			<label hidden$="[[!label]]">[[label]]</label>
+			
+			<cbn-datepicker name$="[[name]]" id="input" class="paper-input-input"
+							value="{{value}}"  
+							placeholder$="[[placeholder]]"
+							format$="[[format]]" 
+							value-format$="[[valueFormat]]"
+							min-date$="[[minDate]]"
+							max-date$="[[maxDate]]" 
+							position$="[[position]]"
+				></cbn-datepicker>
+			
+			<template is="dom-if" if="[[errorMessage]]">
+				<paper-input-error>[[errorMessage]]</paper-input-error>
+			</template>
+		
+		</paper-input-container>
+	
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: 'cbn-paper-datepicker',
+		
+		properties: {
+			
+			/**
+			 * A placeholder to show when the value is empty.
+			 */
+			placeholder: {
+				type: String,
+				value: ''
+			},
+			
+			/**
+			 * The `format` attribute details http://momentjs.com/docs/#/parsing/string-format/.
+			 */
+			format: {
+				type: String,
+				value: 'DD MMMM YYYY'
+			},
+			
+			/**
+			 * The format to use for the input's model value ({@link #value} attribute).
+			 * If the value format is empty, then {@link #format} will be used.
+			 */
+			valueFormat: {
+				type: String,
+				value: 'YYYY-MM-DD'
+			},
+			
+			/**
+			 * Specifies the minimum end of the calendar's date interval.
+			 * Uses Moment.js formatting (see {@link #format}).
+			 */
+			minDate: {
+				type: String,
+				value: '-10y'
+			},
+			
+			/**
+			 * Specifies the minimum end of the calendar's date interval.
+			 * Uses Moment.js formatting (see {@link #format}).
+			 */
+			maxDate: {
+				type: String,
+				value: '+10y'
+			},
+			
+			/**
+			 * The position to show the calendar / picker.
+			 * You can specify multiple positions separated by space.
+			 * if auto is present, the position is automatically adjusted so that the picker is always visible in the 
+			 * current (at the moment of opening) viewport.
+			 * 
+			 * Available values: auto | top | right | bottom | left
+			 */
+			position: {
+				type: String,
+				value: "auto bottom"
+			},
+			
+			_ariaLabelledBy: {
+				type: String
+			},
+			
+			_ariaDescribedBy: {
+				type: String
+			}
+			
+		},
+		
+		behaviors: [
+			Polymer.PaperInputBehavior
+		],
+		
+		ready: function() {
+			this.$.container.addEventListener('input', this.$.container._onInput);
+			this.$.container._handleValue = function(inputElement) {
+				var value = this._inputElementValue;
+				var input = this._inputElement;
+				
+				if (input._displayValue) {
+					this._inputHasContent = true;
+				} else if (input.multiple) {
+					this._inputHasContent = !!(value && value.length);
+				} else {
+					this._inputHasContent = !!(value);
+				}
+				
+				this.updateAddons({
+					inputElement: inputElement,
+					value: value,
+					invalid: this.invalid
+				});
+			}
+		}
+	});
+	
+	CbnForm.registerElement('cbn-paper-datepicker', {
+		types: ['date'],
+		priority: 3
+	});
+	
+</script>

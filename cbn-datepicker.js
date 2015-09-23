@@ -288,6 +288,7 @@
 		 * @private
 		 */
 		_computeCalendarClasses: function(open, positions) {
+			console.log('compute', this._positions);
 			return positions.join(' ') + (open ? ' open' : '' );
 		},
 		
@@ -424,27 +425,32 @@
 				var positions = this.position.split(' ');
 				var auto = (positions.indexOf('auto') >= 0);
 				var classes = [];
+				
+				if (auto && positions.length == 1) {
+					positions = [ 'bottom' ]; // default to 'auto bottom'
+				}
+				
 				for (var i=0; i<positions.length; i++) {
 					var pos = positions[i];
 					switch (pos) {
 						case 'left':
 							if ((elemRect.left - calendarRect.width) < 0) {
-								pos = 'right'; // mirror to the right
+								if (auto) pos = 'right'; // mirror to the right
 							}
 							break;
 						case 'right':
 							if ((elemRect.right + calendarRect.width) > viewportWidth) {
-								pos = 'left'; // mirror to the right
+								if (auto) pos = 'left'; // mirror to the right
 							}
 							break;
 						case 'top':
 							if ((elemRect.top - calendarRect.height) < 0) {
-								pos = 'bottom'; // mirror to the right
+								if (auto) pos = 'bottom'; // mirror to the right
 							}
 							break;
 						case 'bottom':
 							if ((elemRect.bottom + calendarRect.height) > viewportHeight) {
-								pos = 'left'; // mirror to the right
+								if (auto) pos = 'left'; // mirror to the right
 							}
 							break;
 						case 'auto': pos = ''; break; // ignore
@@ -454,6 +460,7 @@
 					}
 				}
 				this._positions = classes;
+				console.log(this._positions);
 			});
 		},
 		
