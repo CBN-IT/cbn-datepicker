@@ -288,7 +288,6 @@
 		 * @private
 		 */
 		_computeCalendarClasses: function(open, positions) {
-			console.log('compute', this._positions);
 			return positions.join(' ') + (open ? ' open' : '' );
 		},
 		
@@ -368,6 +367,8 @@
 			if (event.charCode == 13) { // ENTER
 				this._updateDate();
 				this._updateValue();
+				this._displayDate = this._date.clone();
+				this._render();
 			}
 		},
 		
@@ -460,7 +461,6 @@
 					}
 				}
 				this._positions = classes;
-				console.log(this._positions);
 			});
 		},
 		
@@ -741,9 +741,9 @@
 			parsedDate = this._boundMinDate(parsedDate);
 			parsedDate = this._boundMaxDate(parsedDate);
 			this._date = parsedDate;
-			if (!noDisplay)
+			if (!noDisplay) {
 				this._displayValue = (this._date ? this._date.format(this.format) : '' );
-			
+			}
 			this._displaySelectedItem = (this._date ? this._date.format(this._view.selectedFormat) : '' );
 		},
 		
