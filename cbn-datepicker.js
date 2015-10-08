@@ -310,6 +310,7 @@
 			// fire 'input' / 'change' events
 			this.fire('input');
 			this.fire('change');
+			this.close();
 		},
 		
 		/**
