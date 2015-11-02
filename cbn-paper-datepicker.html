@@ -125,8 +125,21 @@ style this element.
 		},
 		
 		behaviors: [
-			Polymer.PaperInputBehavior
+			Polymer.PaperInputBehavior,
+			CbnForm.DynamicElement
 		],
+		
+		/**
+		 * Element's dynamically-configurable attributes.
+		 * @type {Object}
+		 */
+		dynamicAttributes: {
+			format: true,
+			minDate: true,
+			maxDate: true,
+			position: true,
+			placeholder: true
+		},
 		
 		ready: function() {
 			this.$.container.addEventListener('input', this.$.container._onInput);
