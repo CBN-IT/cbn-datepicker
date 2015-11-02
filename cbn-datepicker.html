@@ -19,7 +19,7 @@
 		<div id="container" tabindex="-1" on-mousedown="_refocusInput">
 			
 			<input is="iron-input" id="input" placeholder$="[[placeholder]]" title="[[title]]" 
-				   on-focus="open" on-tap="open" 
+				   on-focus="open" on-tap="open" autocomplete="off"
 				   on-input="_inputValueChanged" on-keypress="_inputKeyPress"
 				   bind-value="{{_displayValue}}" />
 			
