@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title>Date Pickers Showcase</title>
+	
+	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+	
+	<link rel="import" href="../../cbn-form/cbn-form.html">
+	<link rel="import" href="../../iron-input/iron-input.html">
+	
+	<link rel="import" href="../../cbn-form/cbn-dynamic-form.html">
+	<link rel="import" href="../cbn-datepicker.html">
+	<link rel="import" href="../cbn-paper-datepicker.html">
+	
+</head>
+<body>
+
+<div  style="width: 500px; margin: 50px auto;">
+	<h1>Dynamic date picker</h1>
+	
+	<template is="dom-bind">
+		
+		<form id="demoForm" is="cbn-form" model>
+			
+			<cbn-dynamic-form target="light" config="[[formConfig]]"></cbn-dynamic-form>
+			<br />
+			<button type="submit">Submit</button> <button type="reset">Reset</button>
+			
+		</form>
+		
+		<p style="font-weight: bold;">Output: </p>
+		<pre id="stringifiedJson"></pre>
+		
+	</template>
+
+</div>
+	
+<script>
+	var tpl = document.querySelector('template[is=dom-bind]');
+	
+	tpl.formConfig = {
+		"elements": [
+			{
+				"name": "first",
+				"type": "date",
+				"title": "First",
+				"className": "",
+				"validation": {
+					"required": true
+				}
+			},
+			{
+				"name": "second",
+				"label": "Paper Input",
+				"type": "date",
+				"element": "cbn-paper-datepicker",
+				"validation": {
+					"required": true
+				},
+				"autoValidate": true
+			}
+		]
+	};
+	
+	tpl.addEventListener('dom-change', function(){
+		/** @namespace tpl.$.demoForm */
+		var form = tpl.$.demoForm;
+		
+		function updateOutput() {
+			/** @namespace tpl.$.stringifiedJson */
+			tpl.$.stringifiedJson.textContent = JSON.stringify(form.model, null, 4);
+		}
+		
+		form.addEventListener('value-changed', updateOutput);
+		updateOutput();
+	});
+</script>
+
+</body>
+</html>
