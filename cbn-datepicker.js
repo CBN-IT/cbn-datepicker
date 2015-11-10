@@ -30,6 +30,10 @@
 	};
 	
 	//noinspection JSUnusedGlobalSymbols
+	/**
+	 * This is a datepicker element
+	 * @demo
+	 */
 	Polymer({
 		is: 'cbn-datepicker',
 		
