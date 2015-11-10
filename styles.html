@@ -5,7 +5,7 @@
 	<style>
 		:host {
 		    display: inline-block;
-		    margin: 0 3px;
+		    margin: 0;
 		    position: relative;
 		}
 		
@@ -21,6 +21,21 @@
 		    display: block;
 			width: auto;
 			@apply(--layout-flex);
+		}
+		:host(.paper-input-input) #input {
+			position: relative; /* to make a stacking context */
+			outline: none;
+			box-shadow: none;
+			padding: 0;
+			width: 100%;
+			background: transparent;
+			border: none;
+			color: var(--paper-input-container-input-color, --primary-text-color);
+			-webkit-appearance: none;
+			text-align: inherit;
+
+			@apply(--paper-font-subhead);
+			@apply(--paper-input-container-input);
 		}
 		
 		#calendar {
@@ -141,7 +156,7 @@
 		}
 		
 		#calendar.bottom {
-		    top: 100%
+		    top: 100%;
 			margin-top: 7px;
 		}
 		#calendar.top {
