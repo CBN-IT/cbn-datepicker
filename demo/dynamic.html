@@ -55,6 +55,7 @@
 				"label": "Paper Input",
 				"type": "date",
 				"element": "cbn-paper-datepicker",
+				"defaultValue": "+15d",
 				"validation": {
 					"required": true
 				},
@@ -72,7 +73,10 @@
 			tpl.$.stringifiedJson.textContent = JSON.stringify(form.model, null, 4);
 		}
 		
-		form.addEventListener('value-changed', updateOutput);
+		form.addEventListener('value-changed', function(event) {
+			// console.log('val changed', event.target.name, event.target.value, event.detail);
+			updateOutput();
+		});
 		updateOutput();
 	});
 </script>

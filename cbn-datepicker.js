@@ -40,6 +40,17 @@
 		properties: {
 			
 			/**
+			 * The datepicker's resulting input value.
+			 * It contains always a correct date or a null / empty value otherwise.
+			 */
+			value: {
+				type: String,
+				value: '',
+				notify: false, // CbnForm.InputBehavior handles the notifications
+				observer: '_valueChanged'
+			},
+			
+			/**
 			 * A placeholder to show when the value is empty.
 			 */
 			placeholder: {
@@ -102,6 +113,7 @@
 			
 			/**
 			 * Stores the currently selected date as a Moment.js object.
+			 * 
 			 * Null if no date is selected / the value is empty.
 			 */
 			_date: {
@@ -134,9 +146,9 @@
 			},
 			
 			/**
-			 * The value to display inside the input's text box.
+			 * The user input's value containing the selected date or the value that the user is currently editing.
 			 */
-			_displayValue: {
+			_inputValue: {
 				type: String,
 				value: ''
 			},
@@ -145,15 +157,15 @@
 			 * The centered header strings to display at the top of the calendar.
 			 * Depends on the current view. For example: '2014-2015', 'July 2015' etc.
 			 */
-			_displayHeaderL: {
+			_calendarHeaderL: {
 				type: String,
 				value: ''
 			},
 			
 			/**
-			 * Same as {@link #_displayHeaderL}, but stores the right side caption.
+			 * Same as {@link #_calendarHeaderL}, but stores the right side caption.
 			 */
-			_displayHeaderR: {
+			_calendarHeaderR: {
 				type: String,
 				value: ''
 			},
@@ -162,34 +174,26 @@
 			 * The moment.js date that defines the current calendar view.
 			 * Should never be null. Defaults to today.
 			 */
-			_displayDate: {
+			_calendarViewDate: {
 				type: Object,
 				value: function() { return moment() }
-			},
-			
-			/**
-			 * The display date, as string.
-			 */
-			_displayDateStr: {
-				type: String,
-				value: ''
 			},
 			
 			/**
 			 * An array with the granular date items objects that are currently displayed in the calendar.
 			 * The item's type depends on the current {@link #view}.
 			 */
-			_displayItems: {
+			_calendarItems: {
 				type: Array,
 				value: function() { return []; }
 			},
 			
 			/**
 			 * Stores the currently selected calendar item (for the current view).
-			 * Used by `array-selector` within the UI of the calendar.
+			 * Used within the UI of the calendar to highlight the selected date.
 			 */
-			_displaySelectedItem: {
-				type: Object,
+			_calendarSelectedItem: {
+				type: String,
 				value: ''
 			},
 			
@@ -223,23 +227,53 @@
 		
 		/**
 		 * A read-only property that returns the descriptor object for the current view.
-		 * @private
+		 * 
 		 * @returns {Object}
 		 */
 		get _view() {
 			return DatepickerViewConfig[this._viewType];
 		},
 		
+		/**
+		 * Will be set to true while the `value` property is changed internally.
+		 */
+		_dateValueInternallyChanged: false,
+		
 		
 		// API methods:
+		
+		/**
+		 * Overrides the `CbnForm.Validatable`'s `validate()` method to validate the input value.
+		 */
+		validate: function() {
+			var result = false;
+			if (this._inputValue) {
+				result = this._validateDate(this._inputValue);
+			}
+			if (!result) {
+				this.fire('cbn-form-validate', { result: result });
+				return result;
+			}
+			return CbnForm.Validatable.validate.call(this);
+		},
+		
+		/**
+		 * Changes the currently selected date.
+		 * 
+		 * @param {String|Date|Moment|null} date The date to set. Accepts both Strings and Moment / Date objects.
+		 */
+		setDate: function(date) {
+			this._setDate(date);
+			this._updateValue();
+			this._updateDisplayValue();
+		},
 		
 		/**
 		 * Sets the date to today.
 		 */
 		setToday: function() {
-			this._date = moment();
 			this._viewType = 'days';
-			this._updateValue();
+			this.setDate(moment());
 			this.close();
 		},
 		
@@ -247,8 +281,7 @@
 		 * Clears the selected date.
 		 */
 		clear: function() {
-			this._date = null;
-			this._updateValue();
+			this.setDate('');
 			this.close();
 		},
 		
@@ -260,11 +293,11 @@
 				return; // already open
 			}
 			if (this._date == null) {
-				if (this._displayDate == null)
-					this._displayDate = moment();
+				if (this._calendarViewDate == null)
+					this._calendarViewDate = moment(); // default to today
 				this._viewType = 'days';
 			} else {
-				this._displayDate = this._date.clone();
+				this._calendarViewDate = this._date.clone();
 			}
 			this._render();
 			this._open = true;
@@ -277,48 +310,98 @@
 		close: function() {
 			this._refocus = false;
 			this._open = false;
-			this._updateDate();
-			this._updateValue();
 		},
 		
-		// UI computation methods:
+		// Input value / date conversion logic
 		
 		/**
-		 * Computes the #calendar component's class list.
+		 * Parses and sets the internal `_date` value to the specified value.
 		 * 
-		 * @param open Whether the calendar is open.
-		 * @param positions The positions array.
-		 * @return {String} The calendar container's classes.
-		 * @private
-		 */
-		_computeCalendarClasses: function(open, positions) {
-			return positions.join(' ') + (open ? ' open' : '' );
-		},
-		
-		/**
-		 * Computes a header caption's class list.
+		 * Note: doesn't update the displayed / input values. 
+		 * Call `_updateDisplayValue` and/or `_updateValue` for doing this.
 		 * 
-		 * @param value The text to display (if any).
-		 * @return {String} The header caption's classes.
-		 * @private
+		 * @param {String|Date|Moment|null} date The date to set. Accepts both Strings and Moment / Date objects.
 		 */
-		_computeHeaderClasses: function (value) {
-			return 'flex colored header' + (value ? '' : ' hidden' );
+		_setDate: function(date) {
+			var parsedDate = null;
+			if (date) {
+				parsedDate = this._parseDate(date);
+				if (!parsedDate.isValid())
+					parsedDate = null;
+				if (parsedDate) {
+					parsedDate = this._boundMinDate(parsedDate);
+					parsedDate = this._boundMaxDate(parsedDate);
+				}
+			}
+			
+			this._date = parsedDate;
+			
+			// set the view / selected calendar dates
+			this._calendarViewDate = (this._date ? this._date.clone() : moment());
+			this._calendarSelectedItem = (this._date ? this._date.format(this._view.selectedFormat) : '' );
 		},
 		
 		/**
-		 * Computes a calendar item's classes.
-		 * @param item The item to compute the class for.
-		 * @param selectedValue The currently selected item.
-		 * @return {String} The item's classes.
-		 * @private
+		 * Updates the user-displayed input value to reflect the current {@link #_date} value.
 		 */
-		_computeItemClasses: function(item, selectedValue) {
-			return item.cl + (selectedValue == item.val ? ' selected' : '');
+		_updateDisplayValue: function() {
+			this._inputValue = (this._date ? this._date.format(this.format) : '');
+		},
+		
+		/**
+		 * Updates the input's `value` property from the current {@link #_date} value.
+		 */
+		_updateValue: function() {
+			this._dateValueInternallyChanged = true;
+			try {
+				this._setValue(this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '');
+			} finally {
+				this._dateValueInternallyChanged = false;
+			}
+		},
+		
+		/**
+		 * Called when the input's value property is indirectly changed (e.g. by the form).
+		 */
+		_valueChanged: function() {
+			if (this._dateValueInternallyChanged) return;
+			this._setDate(this.value);
+			this._updateDisplayValue();
+			var newValue = ( this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '' );
+			if (this.value != newValue) {
+				this._updateValue();
+				// notify the parent form that our value was re-formatted
+				this._setIndirectValue(this.value, {
+					'reformatted': true
+				});
+			}
+		},
+		
+		/**
+		 * Called when the user changes the text input.
+		 * 
+		 * If the text entered is parse-able as date, changes the currently selected date.
+		 * If empty, it clears the input date.
+		 */
+		_inputValueChanged: function(event) {
+			var input = event.currentTarget;
+			// backup the input's selection
+			// store current positions in variables
+			var start = input.selectionStart,
+				end = input.selectionEnd;
+			
+			this._inputValue = input.value;
+			if (!this._inputValue || this._validateDate(this._inputValue)) {
+				this._setDate(this._inputValue);
+				this._updateValue();
+			}
+			
+			// restore the selection
+			input.setSelectionRange(start, end);
 		},
 		
 		
-		// Implementation:
+		// Misc. event handlers / observers:
 		
 		/**
 		 * Callback when an element instance is attached to the DOM. Used to set up event handlers.
@@ -352,26 +435,14 @@
 		},
 		
 		/**
-		 * Called when the {@link #_displayValue} property is changed (either externally or by using the embedded text 
-		 * input to edit the date).
-		 */
-		_inputValueChanged: function() {
-			// the value will be updated in the next microtask
-			this.async(function() {
-				this._updateDate(true);
-			});
-		},
-		
-		/**
-		 * Captures the input key events to listen for Enter key presses.
+		 * Captures the input key events to listen for special keys.
+		 * 
 		 * @param event The key event.
-		 * @private
 		 */
 		_inputKeyPress: function(event) {
-			if (event.charCode == 13) { // ENTER
-				this._updateDate();
+			if (event.charCode == 13) { // Enter
+				this._setDate(this._inputValue);
 				this._updateValue();
-				this._displayDate = this._date.clone();
 				this._render();
 			}
 		},
@@ -410,10 +481,9 @@
 		// UI-related functions (mainly for calendar rendering)
 		
 		/**
-		 * Updates the calendar's position. 
+		 * Updates the calendar's position.
+		 * 
 		 * Called automatically when the date picker opens.
-		 *
-		 * @private
 		 */
 		_updatePosition: function() {
 			if (!this._open) 
@@ -471,28 +541,25 @@
 		/**
 		 * Called when the user clicks a calendar item.
 		 * Sets the date and changes the view.
-		 * @private
 		 */
 		_selectItem: function(event) {
 			var selectedItem = event.model.item;
 			if (!selectedItem.val)
 				return;
 			
-			this._displaySelectedItem = selectedItem.val;
+			this._calendarSelectedItem = selectedItem.val;
 			
 			var clickedDate = moment(selectedItem.val, this._view.selectedFormat);
 			if (!clickedDate || !clickedDate.isValid())
 				return;
 			
 			// if the user clicked a day from another month, don't close the picker; instead, navigate to the new month
-			if (this._viewType == 'days' && clickedDate.month() != this._displayDate.month()) {
-				this._date = clickedDate;
-				this._displayDate = this._date;
-				this._updateValue();
+			if (this._viewType == 'days' && clickedDate.month() != this._calendarViewDate.month()) {
+				this.setDate(clickedDate);
 				this._render();
 				
 			} else {
-				this._displayDate = clickedDate;
+				this._calendarViewDate = clickedDate;
 				// try to navigate down
 				this._navigateDown();
 			}
@@ -500,14 +567,11 @@
 		
 		/**
 		 * Navigates down from the current view hierarchy (i.e. from 'years' to 'months').
-		 * If already at the last view (days), will select the date ({@link #_displayDate}) and close the dialog.
-		 *
-		 * @private
+		 * If already at the last view (days), will select the date ({@link #_calendarViewDate}) and close the dialog.
 		 */
 		_navigateDown: function() {
 			if (this._viewType == 'days') {
-				this._date = this._displayDate.clone();
-				this._updateValue();
+				this.setDate(this._calendarViewDate);
 				this.close();
 				return;
 			}
@@ -519,7 +583,6 @@
 		/**
 		 * Navigates up from the current view (i.e. from 'days' to 'months').
 		 * It's a no-op if already at the root view ('years').
-		 * @private
 		 */
 		_navigateUp: function() {
 			if (this._view.navigateUp)
@@ -529,7 +592,6 @@
 		
 		/**
 		 * Navigates to the left header button (whose action depends on the current view).
-		 * @private
 		 */
 		_navigateHeaderL: function() {
 			// always navigate one view up
@@ -538,7 +600,6 @@
 		
 		/**
 		 * Navigates to the right header button (whose action depends on the current view).
-		 * @private
 		 */
 		_navigateHeaderR: function() {
 			switch (this._viewType) {
@@ -551,73 +612,69 @@
 		
 		/**
 		 * Navigates to the previous parent item (if available).
-		 * @private
 		 */
 		_navigatePrev: function() {
-			var newDate = this._displayDate.clone();
+			var newDate = this._calendarViewDate.clone();
 			if (this._view.navigateLR)
 				newDate.add(-1, this._view.navigateLR);
 			
 			newDate = this._boundMinDate(newDate);
-			this._displayDate = newDate;
+			this._calendarViewDate = newDate;
 			this._render();
 		},
 		
 		/**
 		 * Navigates to the next parent item (if available).
-		 * @private
 		 */
 		_navigateNext: function() {
-			var newDate = this._displayDate.clone();
+			var newDate = this._calendarViewDate.clone();
 			if (this._view.navigateLR)
 				newDate.add(1, this._view.navigateLR);
 			
 			newDate = this._boundMaxDate(newDate);
-			this._displayDate = newDate;
+			this._calendarViewDate = newDate;
 			this._render();
 		},
 		
 		/**
 		 * [Re]Renders the calendar.
 		 * Called whenever the date or the input's value is changed.
-		 * @private
 		 */
 		_render: function() {
 			// reset UI elements
-			this._displayHeaderL = '';
-			this._displayHeaderR = '';
-			this._displayItems = [];
+			this._calendarHeaderL = '';
+			this._calendarHeaderR = '';
+			this._calendarItems = [];
 			
 			if (this._view.displayHeaderL && this._view.displayHeaderL != 'special')
-				this._displayHeaderL = this._displayDate.format(this._view.displayHeaderL);
+				this._calendarHeaderL = this._calendarViewDate.format(this._view.displayHeaderL);
 			if (this._view.displayHeaderR)
-				this._displayHeaderR = this._displayDate.format(this._view.displayHeaderR);
+				this._calendarHeaderR = this._calendarViewDate.format(this._view.displayHeaderR);
 			
 			if (this._viewType == 'years') {
-				if (this._displayItems.length) { // show years range
-					this._displayHeaderL = this._displayItems[0].label +
-						' - ' + this._displayItems[this._displayItems.length - 1].label;
+				if (this._calendarItems.length) { // show years range
+					this._calendarHeaderL = this._calendarItems[0].label +
+						' - ' + this._calendarItems[this._calendarItems.length - 1].label;
 				}
 			}
 			
 			this[this._view.renderFun]();
 			
-			this._displaySelectedItem = (this._date ? this._date.format(this._view.selectedFormat) : '' );
+			this._calendarSelectedItem = (this._date ? this._date.format(this._view.selectedFormat) : '' );
 		},
 		
 		/**
-		 * Fills the {@link #_displayItems} property with the days to be printed on the calendar.
+		 * Fills the {@link #_calendarItems} property with the days to be printed on the calendar.
 		 * Used when {@link #view} == 'days'.
-		 * @private
 		 */
 		_renderDays: function() {
-			var start = this._displayDate.clone().startOf('month').day(0);
-			var end = this._displayDate.clone().endOf('month').day(6);
+			var start = this._calendarViewDate.clone().startOf('month').day(0);
+			var end = this._calendarViewDate.clone().endOf('month').day(6);
 			
-			var month = this._displayDate.month();
+			var month = this._calendarViewDate.month();
 			
 			// start by printing the week days
-			this.set('_displayItems', this._getWeekDays());
+			this.set('_calendarItems', this._getWeekDays());
 			
 			// now add each day of the month
 			moment()
@@ -643,7 +700,7 @@
 						item.cl += " today";
 					}
 					
-					this.push('_displayItems', item);
+					this.push('_calendarItems', item);
 					
 				}.bind(this));
 		},
@@ -651,7 +708,6 @@
 		/**
 		 * Returns the UI items representing the week days.
 		 * Used when {@link #view} == 'days'.
-		 * @private
 		 */
 		_getWeekDays: function() {
 			var start = moment().day(0),
@@ -670,15 +726,14 @@
 		},
 		
 		/**
-		 * Fills the {@link #_displayItems} property with the months to be printed on the calendar.
+		 * Fills the {@link #_calendarItems} property with the months to be printed on the calendar.
 		 * Used when {@link #view} == 'months'.
-		 * @private
 		 */
 		_renderMonths: function() {
-			var start = this._displayDate.clone().startOf('year'),
-				end = this._displayDate.clone().endOf('year');
+			var start = this._calendarViewDate.clone().startOf('year'),
+				end = this._calendarViewDate.clone().endOf('year');
 			
-			this.set('_displayItems', []);
+			this.set('_calendarItems', []);
 			moment()
 				.range(start, end)
 				.by('months', function (moment) {
@@ -696,28 +751,27 @@
 						item.cl += ' active';
 					}
 					
-					this.push('_displayItems', item);
+					this.push('_calendarItems', item);
 					
 				}.bind(this));
 		},
 		
 		/**
-		 * Fills the {@link #_displayItems} property with the days to be printed on the calendar.
+		 * Fills the {@link #_calendarItems} property with the days to be printed on the calendar.
 		 * Used when {@link #view} == 'years'.
-		 * @private
 		 */
 		_renderYears: function() {
-			var start = this._displayDate.clone().subtract(12, 'year'),
-				end = this._displayDate.clone().add(22, 'year');
+			var start = this._calendarViewDate.clone().subtract(12, 'year'),
+				end = this._calendarViewDate.clone().add(22, 'year');
 			
-			this.set('_displayItems', []);
+			this.set('_calendarItems', []);
 			start = this._boundMinDate(start);
 			end = this._boundMaxDate(end);
 			
 			moment()
 				.range(start, end)
 				.by('years', function (moment) {
-					this.push('_displayItems', {
+					this.push('_calendarItems', {
 						val: moment.format(this._view.selectedFormat),
 						label: moment.format('YYYY'),
 						cl: 'years active'
@@ -725,49 +779,46 @@
 				}.bind(this));
 		},
 		
-		
-		// Date / input value manipulation methods
+		// UI computation methods:
 		
 		/**
-		 * Updates the internal date object from the current {@link #value}.
-		 * @param {Boolean} [noDisplay] Set to skip updating the displayed value.
-		 * @private
+		 * Computes the #calendar component's class list.
+		 * 
+		 * @param open Whether the calendar is open.
+		 * @param positions The positions array.
+		 * @return {String} The calendar container's classes.
 		 */
-		_updateDate: function(noDisplay) {
-			var parsedDate = this._parseDate(this._displayValue);
-			if (!this._displayValue || !parsedDate || !parsedDate.isValid()) {
-				if (!noDisplay) {
-					this._displayValue = '';
-				}
-				return;
-			}
-			
-			parsedDate = this._boundMinDate(parsedDate);
-			parsedDate = this._boundMaxDate(parsedDate);
-			this._date = parsedDate;
-			if (!noDisplay) {
-				this._displayValue = (this._date ? this._date.format(this.format) : '' );
-			}
-			this._displaySelectedItem = (this._date ? this._date.format(this._view.selectedFormat) : '' );
+		_computeCalendarClasses: function(open, positions) {
+			return positions.join(' ') + (open ? ' open' : '' );
 		},
 		
 		/**
-		 * Updates the input's value from the current internal {@link #_date} object.
-		 * @param {Boolean} [noDisplay] Set to skip updating the displayed value.
-		 * @private
+		 * Computes a header caption's class list.
+		 * 
+		 * @param value The text to display (if any).
+		 * @return {String} The header caption's classes.
 		 */
-		_updateValue: function(noDisplay) {
-			this.value = ( this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '' );
-			
-			if (!noDisplay)
-				this._displayValue = (this._date ? this._date.format(this.format) : '' );
+		_computeHeaderClasses: function (value) {
+			return 'flex colored header' + (value ? '' : ' hidden' );
 		},
+		
+		/**
+		 * Computes a calendar item's classes.
+		 * @param item The item to compute the class for.
+		 * @param selectedValue The currently selected item.
+		 * @return {String} The item's classes.
+		 */
+		_computeItemClasses: function(item, selectedValue) {
+			return item.cl + (selectedValue == item.val ? ' selected' : '');
+		},
+		
+		
+		// Date manipulation methods
 		
 		/**
 		 * Parses a date string using the configured {@link #format} and returns a Moment.js object.
 		 * Also accepts Date and moment objects.
-		 *
-		 * @private
+		 * 
 		 * @param {String|Date|moment} dateStr The input date.
 		 * @returns {moment|null} The Moment object representing the date.
 		 */
@@ -777,7 +828,7 @@
 				if (typeof dateStr === "string") {
 					// accept relative dates
 					// e.g. "+1d", "-5w" etc.
-					var pattern = /([+\-]?[0-9]+)\s*(d|w|m|y|q)/ig;
+					var pattern = /([+\-][0-9]+)\s*(d|w|m|y|q)/ig;
 					var matches = pattern.exec(dateStr);
 					
 					if (matches) {
@@ -812,10 +863,22 @@
 						date = moment(dateStr, [ this.valueFormat, this.format ]);
 					}
 				} else {
-					date = moment(date);
+					date = moment(dateStr);
 				}
 			}
 			return date;
+		},
+		
+		/**
+		 * validates the specified date string and returns true if parseable.
+		 * 
+		 * @param {String} dateStr The date string to validate.
+		 * @returns {Boolean} Whether the string is valid.
+		 */
+		_validateDate: function(dateStr) {
+			if (!dateStr) return false;
+			var parsed = this._parseDate(dateStr);
+			return (parsed && parsed.isValid());
 		},
 		
 		/**
@@ -824,7 +887,6 @@
 		 *
 		 * @param {moment} date The date to be bounded.
 		 * @return {moment} A date within the limits.
-		 * @private
 		 */
 		_boundMinDate: function(date) {
 			if (this._minDate != null && date.isBefore(this._minDate)) {
@@ -839,7 +901,6 @@
 		 *
 		 * @param {moment} date The date to be bounded.
 		 * @return {moment} A date within the limits.
-		 * @private
 		 */
 		_boundMaxDate: function(date) {
 			if (this._maxDate != null && date.isAfter(this._maxDate)) {

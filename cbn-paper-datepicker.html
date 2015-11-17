@@ -34,17 +34,15 @@ style this element.
 			<label hidden$="[[!label]]">[[label]]</label>
 			
 			<cbn-datepicker name$="[[name]]" id="input" class="paper-input-input"
-							value="{{value}}"
+							value="{{value}}" default-value="[[defaultValue]]"
+							autocomplete="[[autocomplete]]" autofocus="[[autofocus]]" size="[[size]]"
+							disabled="[[disabled]]" inputmode="[[inputmode]]" readonly="[[readonly]]"
 							placeholder$="[[placeholder]]"
-							format$="[[format]]" 
-							value-format$="[[valueFormat]]"
-							min-date$="[[minDate]]"
-							max-date$="[[maxDate]]"
+							format$="[[format]]" value-format$="[[valueFormat]]"
+							min-date$="[[minDate]]" max-date$="[[maxDate]]"
 							position$="[[position]]"
-							validation="[[validation]]"
-							validation-order="[[validationOrder]]"
-							validation-type="[[validationType]]"
-							default-validation-message="[[defaultValidationMessage]]"
+							validation="[[validation]]" validation-order="[[validationOrder]]" 
+							validation-type="[[validationType]]" default-validation-message="[[defaultValidationMessage]]"
 				></cbn-datepicker>
 			
 			<template is="dom-if" if="[[errorMessage]]">
