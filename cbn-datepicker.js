@@ -25,6 +25,7 @@
 			selectedFormat: 'YYYY',
 			navigateDown: 'months',
 			displayHeaderL: 'special',
+			navigateLR: 'yearsRange',
 			renderFun: '_renderYears'
 		}
 	};
@@ -93,6 +94,15 @@
 				type: String,
 				value: '+10y',
 				observer: '_maxDateChanged'
+			},
+			
+			/**
+			 * Specifies the maximum number of years to display in the calendar 'years range' view.
+			 * Zero means show all years if min / max date is bounded, else defaults to 25 years.
+			 */
+			yearsRangeCount: {
+				type: Number,
+				value: 0
 			},
 			
 			/**
@@ -232,6 +242,20 @@
 		 */
 		get _view() {
 			return DatepickerViewConfig[this._viewType];
+		},
+		
+		/**
+		 * Computes the number of years to draw.
+		 * 
+		 * @returns {Number} The number of years to draw.
+		 */
+		get _yearsRangeCount() {
+			if (!this.yearsRangeCount) { // infer default value
+				if (this._minDate && this._maxDate) {
+					return Math.ceil(this._maxDate.diff(this._minDate, 'years', true));
+				} else return 25;
+			}
+			return this.yearsRangeCount;
 		},
 		
 		/**
@@ -615,10 +639,19 @@
 		 */
 		_navigatePrev: function() {
 			var newDate = this._calendarViewDate.clone();
-			if (this._view.navigateLR)
+			if (this._view.navigateLR == 'yearsRange') {
+				newDate.add(-1, 'y');
+				// check bounds
+				var checkDate = newDate.clone().subtract(Math.floor(this._yearsRangeCount / 2), 'y');
+				if (this._minDate && this._minDate.isAfter(checkDate)) {
+					newDate = this._calendarViewDate;
+				}
+				
+			} else if (this._view.navigateLR) {
 				newDate.add(-1, this._view.navigateLR);
+				newDate = this._boundMinDate(newDate);
+			}
 			
-			newDate = this._boundMinDate(newDate);
 			this._calendarViewDate = newDate;
 			this._render();
 		},
@@ -628,10 +661,19 @@
 		 */
 		_navigateNext: function() {
 			var newDate = this._calendarViewDate.clone();
-			if (this._view.navigateLR)
-				newDate.add(1, this._view.navigateLR);
 			
-			newDate = this._boundMaxDate(newDate);
+			if (this._view.navigateLR == 'yearsRange') {
+				newDate.add(1, 'y');
+				// check bounds
+				var checkDate = newDate.clone().add(Math.ceil(this._yearsRangeCount / 2), 'y');
+				if (this._maxDate && this._maxDate.isBefore(checkDate)) {
+					newDate = this._calendarViewDate;
+				}
+			} else if (this._view.navigateLR) {
+				newDate.add(1, this._view.navigateLR);
+				newDate = this._boundMaxDate(newDate);
+			}
+			
 			this._calendarViewDate = newDate;
 			this._render();
 		},
@@ -651,14 +693,14 @@
 			if (this._view.displayHeaderR)
 				this._calendarHeaderR = this._calendarViewDate.format(this._view.displayHeaderR);
 			
+			this[this._view.renderFun]();
+			
 			if (this._viewType == 'years') {
 				if (this._calendarItems.length) { // show years range
 					this._calendarHeaderL = this._calendarItems[0].label +
 						' - ' + this._calendarItems[this._calendarItems.length - 1].label;
 				}
 			}
-			
-			this[this._view.renderFun]();
 			
 			this._calendarSelectedItem = (this._date ? this._date.format(this._view.selectedFormat) : '' );
 		},
@@ -761,11 +803,11 @@
 		 * Used when {@link #view} == 'years'.
 		 */
 		_renderYears: function() {
-			var start = this._calendarViewDate.clone().subtract(12, 'year'),
-				end = this._calendarViewDate.clone().add(22, 'year');
-			
 			this.set('_calendarItems', []);
+			var count = this._yearsRangeCount;
+			var start = this._calendarViewDate.clone().subtract(Math.floor(count / 2), 'year');
 			start = this._boundMinDate(start);
+			var end = start.clone().add(count, 'years');
 			end = this._boundMaxDate(end);
 			
 			moment()
