@@ -39,6 +39,21 @@
 <script>
 	var tpl = document.querySelector('template[is=dom-bind]');
 	
+	tpl.addEventListener('dom-change', function(){
+		/** @namespace tpl.$.demoForm */
+		var form = tpl.$.demoForm;
+		
+		function updateOutput(ev) {
+			if (ev)
+				console.trace('value changed', ev.target.name, ev.detail);
+			/** @namespace tpl.$.stringifiedJson */
+			tpl.$.stringifiedJson.textContent = JSON.stringify(form.model, null, 4);
+		}
+		
+		form.addEventListener('value-changed', updateOutput);
+		updateOutput();
+	});
+	
 	tpl.formConfig = {
 		"elements": [
 			{
@@ -63,22 +78,7 @@
 			}
 		]
 	};
-	
-	tpl.addEventListener('dom-change', function(){
-		/** @namespace tpl.$.demoForm */
-		var form = tpl.$.demoForm;
-		
-		function updateOutput() {
-			/** @namespace tpl.$.stringifiedJson */
-			tpl.$.stringifiedJson.textContent = JSON.stringify(form.model, null, 4);
-		}
-		
-		form.addEventListener('value-changed', function(event) {
-			// console.log('val changed', event.target.name, event.target.value, event.detail);
-			updateOutput();
-		});
-		updateOutput();
-	});
+
 </script>
 
 </body>

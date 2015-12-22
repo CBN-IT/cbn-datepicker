@@ -1,35 +1,5 @@
 (function() {
 	
-	/**
-	 * Stores the descriptors/configuration for each view.
-	 * @type {Object}
-	 */
-	var DatepickerViewConfig = {
-		'days': {
-			selectedFormat: 'YYYY-MM-DD',
-			navigateUp: 'months',
-			displayHeaderL: 'MMM',
-			displayHeaderR: 'YYYY',
-			navigateLR: 'M',
-			renderFun: '_renderDays'
-		},
-		'months': {
-			selectedFormat: 'YYYY-MM',
-			navigateUp: 'years',
-			navigateDown: 'days',
-			navigateLR: 'y',
-			displayHeaderL: 'YYYY',
-			renderFun: '_renderMonths'
-		},
-		'years': {
-			selectedFormat: 'YYYY',
-			navigateDown: 'months',
-			displayHeaderL: 'special',
-			navigateLR: 'yearsRange',
-			renderFun: '_renderYears'
-		}
-	};
-	
 	//noinspection JSUnusedGlobalSymbols
 	/**
 	 * This is a datepicker element
@@ -48,7 +18,7 @@
 			value: {
 				type: String,
 				value: '',
-				notify: false, // CbnForm.InputBehavior handles the notifications
+				notify: false, // the observer handles the notifications
 				observer: '_valueChanged'
 			},
 			
@@ -109,9 +79,9 @@
 			/**
 			 * The position to show the calendar / picker.
 			 * You can specify multiple positions separated by space.
-			 * if auto is present, the position is automatically adjusted so that the picker is always visible in the 
+			 * if auto is present, the position is automatically adjusted so that the picker is always visible in the
 			 * current (at the moment of opening) viewport.
-			 * 
+			 *
 			 * Available values: auto | top | right | bottom | left
 			 */
 			position: {
@@ -124,7 +94,7 @@
 			
 			/**
 			 * Stores the currently selected date as a Moment.js object.
-			 * 
+			 *
 			 * Null if no date is selected / the value is empty.
 			 */
 			_date: {
@@ -238,7 +208,7 @@
 		
 		/**
 		 * A read-only property that returns the descriptor object for the current view.
-		 * 
+		 *
 		 * @returns {Object}
 		 */
 		get _view() {
@@ -247,7 +217,7 @@
 		
 		/**
 		 * Computes the number of years to draw.
-		 * 
+		 *
 		 * @returns {Number} The number of years to draw.
 		 */
 		get _yearsRangeCount() {
@@ -262,7 +232,7 @@
 		/**
 		 * Will be set to true while the `value` property is changed internally.
 		 */
-		_dateValueInternallyChanged: false,
+		_dateValueUserChanged: false,
 		
 		ready: function() {
 			this._readied = true;
@@ -288,7 +258,7 @@
 		
 		/**
 		 * Changes the currently selected date.
-		 * 
+		 *
 		 * @param {String|Date|Moment|null} date The date to set. Accepts both Strings and Moment / Date objects.
 		 */
 		setDate: function(date) {
@@ -345,10 +315,10 @@
 		
 		/**
 		 * Parses and sets the internal `_date` value to the specified value.
-		 * 
-		 * Note: doesn't update the displayed / input values. 
+		 *
+		 * Note: doesn't update the displayed / input values.
 		 * Call `_updateDisplayValue` and/or `_updateValue` for doing this.
-		 * 
+		 *
 		 * @param {String|Date|Moment|null} date The date to set. Accepts both Strings and Moment / Date objects.
 		 */
 		_setDate: function(date) {
@@ -381,12 +351,19 @@
 		 * Updates the input's `value` property from the current {@link #_date} value.
 		 */
 		_updateValue: function() {
-			this._dateValueInternallyChanged = true;
+			this._dateValueUserChanged = true;
 			try {
 				this._setValue(this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '');
 			} finally {
-				this._dateValueInternallyChanged = false;
+				this._dateValueUserChanged = false;
 			}
+		},
+		
+		/**
+		 * Override the FormElement's value observer to prevent firing multiple `value-changed` events.
+		 * We use our own transaction system.
+		 */
+		_fe_valueChanged: function() {
 		},
 		
 		/**
@@ -394,22 +371,27 @@
 		 */
 		_valueChanged: function() {
 			if (!this._readied) return;
-			if (this._dateValueInternallyChanged) return;
-			
-			this._setDate(this.value);
-			this._updateDisplayValue();
+				
+			if (!this._dateValueUserChanged) {
+				this._setDate(this.value);
+				this._updateDisplayValue();
+			}
 			var newValue = ( this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '' );
-			if (this.value != newValue) {
+			if (this.value != newValue || this._inputValueIndirectlyChanged) {
 				// notify the parent form that our value was re-formatted
 				this._setIndirectValue(newValue, {
 					'reformatted': true
+				});
+			} else {
+				this.fire('value-changed', {
+					value: this.value
 				});
 			}
 		},
 		
 		/**
 		 * Called when the user changes the text input.
-		 * 
+		 *
 		 * If the text entered is parse-able as date, changes the currently selected date.
 		 * If empty, it clears the input date.
 		 */
@@ -466,7 +448,7 @@
 		
 		/**
 		 * Captures the input key events to listen for special keys.
-		 * 
+		 *
 		 * @param event The key event.
 		 */
 		_inputKeyPress: function(event) {
@@ -512,11 +494,11 @@
 		
 		/**
 		 * Updates the calendar's position.
-		 * 
+		 *
 		 * Called automatically when the date picker opens.
 		 */
 		_updatePosition: function() {
-			if (!this._open) 
+			if (!this._open)
 				return;
 			
 			// wait for CSS to get processed
@@ -831,7 +813,7 @@
 		
 		/**
 		 * Computes the #calendar component's class list.
-		 * 
+		 *
 		 * @param open Whether the calendar is open.
 		 * @param positions The positions array.
 		 * @return {String} The calendar container's classes.
@@ -842,7 +824,7 @@
 		
 		/**
 		 * Computes a header caption's class list.
-		 * 
+		 *
 		 * @param value The text to display (if any).
 		 * @return {String} The header caption's classes.
 		 */
@@ -866,7 +848,7 @@
 		/**
 		 * Parses a date string using the configured {@link #format} and returns a Moment.js object.
 		 * Also accepts Date and moment objects.
-		 * 
+		 *
 		 * @param {String|Date|moment} dateStr The input date.
 		 * @returns {moment|null} The Moment object representing the date.
 		 */
@@ -919,7 +901,7 @@
 		
 		/**
 		 * validates the specified date string and returns true if parseable.
-		 * 
+		 *
 		 * @param {String} dateStr The date string to validate.
 		 * @returns {Boolean} Whether the string is valid.
 		 */
@@ -960,6 +942,36 @@
 		// The End!
 		
 	});
+	
+	/**
+	 * Stores the descriptors/configuration for each view.
+	 * @type {Object}
+	 */
+	var DatepickerViewConfig = {
+		'days': {
+			selectedFormat: 'YYYY-MM-DD',
+			navigateUp: 'months',
+			displayHeaderL: 'MMM',
+			displayHeaderR: 'YYYY',
+			navigateLR: 'M',
+			renderFun: '_renderDays'
+		},
+		'months': {
+			selectedFormat: 'YYYY-MM',
+			navigateUp: 'years',
+			navigateDown: 'days',
+			navigateLR: 'y',
+			displayHeaderL: 'YYYY',
+			renderFun: '_renderMonths'
+		},
+		'years': {
+			selectedFormat: 'YYYY',
+			navigateDown: 'months',
+			displayHeaderL: 'special',
+			navigateLR: 'yearsRange',
+			renderFun: '_renderYears'
+		}
+	};
 	
 	CbnForm.registerElement('cbn-datepicker', {
 		types: ['date']
