@@ -40,6 +40,7 @@
 		
 		properties: {
 			
+			
 			/**
 			 * The datepicker's resulting input value.
 			 * It contains always a correct date or a null / empty value otherwise.
@@ -263,6 +264,10 @@
 		 */
 		_dateValueInternallyChanged: false,
 		
+		ready: function() {
+			this._readied = true;
+			this._valueChanged();
+		},
 		
 		// API methods:
 		
@@ -388,7 +393,9 @@
 		 * Called when the input's value property is indirectly changed (e.g. by the form).
 		 */
 		_valueChanged: function() {
+			if (!this._readied) return;
 			if (this._dateValueInternallyChanged) return;
+			
 			this._setDate(this.value);
 			this._updateDisplayValue();
 			var newValue = ( this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '' );
