@@ -21,9 +21,8 @@
 		
 		<form is="cbn-form" id="demoForm" model="{{formModel}}">
 			
-			
 			<p>
-				<cbn-paper-datepicker name="first" value="+3d" minDate="-1m" maxDate="+3y" label="First"></cbn-paper-datepicker>
+				<cbn-paper-datepicker name="first" value="{{value1}}" minDate="-1m" maxDate="+3y" label="First"></cbn-paper-datepicker>
 			</p>
 			<p>
 				<cbn-paper-datepicker name="second" default-value="-8d" position="auto bottom"  label="Second"></cbn-paper-datepicker>
@@ -51,6 +50,8 @@
 <script>
 	var tpl = document.querySelector('template[is=dom-bind]');
 	tpl.formModel = {};
+	tpl.value1 = '-3d';
+	
 	tpl.addEventListener('dom-change', function(){
 		/** @namespace tpl.$.demoForm */
 		var form = tpl.$.demoForm;

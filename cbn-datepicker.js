@@ -400,9 +400,8 @@
 			this._updateDisplayValue();
 			var newValue = ( this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '' );
 			if (this.value != newValue) {
-				this._updateValue();
 				// notify the parent form that our value was re-formatted
-				this._setIndirectValue(this.value, {
+				this._setIndirectValue(newValue, {
 					'reformatted': true
 				});
 			}
