@@ -40,7 +40,7 @@ style this element.
 							placeholder$="[[placeholder]]"
 							format$="[[format]]" value-format$="[[valueFormat]]"
 							min-date$="[[minDate]]" max-date$="[[maxDate]]"
-							position$="[[position]]"
+							position$="[[position]]" position-reference="{{_self}}"
 							validation="[[validation]]" validation-order="[[validationOrder]]" 
 							validation-type="[[validationType]]" default-validation-message="[[defaultValidationMessage]]"
 				></cbn-datepicker>
@@ -104,8 +104,7 @@ style this element.
 			 * Available values: auto | top | right | bottom | left
 			 */
 			position: {
-				type: String,
-				value: "auto bottom"
+				type: String
 			},
 			
 			_ariaLabelledBy: {
@@ -114,6 +113,11 @@ style this element.
 			
 			_ariaDescribedBy: {
 				type: String
+			},
+			
+			_self: {
+				type: Object,
+				value: function() { return this; }
 			}
 			
 		},

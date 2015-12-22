@@ -78,15 +78,12 @@
 			
 			/**
 			 * The position to show the calendar / picker.
-			 * You can specify multiple positions separated by space.
-			 * if auto is present, the position is automatically adjusted so that the picker is always visible in the
-			 * current (at the moment of opening) viewport.
-			 *
-			 * Available values: auto | top | right | bottom | left
+			 * 
+			 * See `PositionBehavior` for mode details.
 			 */
 			position: {
 				type: String,
-				value: "auto bottom",
+				value: "bottom+10 left, top left",
 				observer: '_updatePosition'
 			},
 			
@@ -108,14 +105,6 @@
 			_open: {
 				type: Boolean,
 				value: false
-			},
-			
-			/**
-			 * Stores the position classes of the calendar element.
-			 */
-			_positions: {
-				type: Array,
-				value: function() { return []; }
 			},
 			
 			/**
@@ -191,7 +180,8 @@
 		behaviors: [
 			CbnForm.InputElement,
 			CbnForm.Validatable,
-			CbnForm.DynamicElement
+			CbnForm.DynamicElement,
+			Cbn.PositionBehavior
 		],
 		
 		/**
@@ -398,7 +388,6 @@
 		_inputValueChanged: function(event) {
 			var input = event.currentTarget;
 			// backup the input's selection
-			// store current positions in variables
 			var start = input.selectionStart,
 				end = input.selectionEnd;
 			
@@ -503,50 +492,7 @@
 			
 			// wait for CSS to get processed
 			this.async(function() {
-				// calculate current positions / sizes
-				var elemRect = this.getBoundingClientRect();
-				var calendarRect = this.$.calendar.getBoundingClientRect();
-				var viewportWidth = document.documentElement.clientWidth;
-				var viewportHeight = document.documentElement.clientHeight;
-				
-				var positions = this.position.split(' ');
-				var auto = (positions.indexOf('auto') >= 0);
-				var classes = [];
-				
-				if (auto && positions.length == 1) {
-					positions = [ 'bottom' ]; // default to 'auto bottom'
-				}
-				
-				for (var i=0; i<positions.length; i++) {
-					var pos = positions[i];
-					switch (pos) {
-						case 'left':
-							if ((elemRect.left - calendarRect.width) < 0) {
-								if (auto) pos = 'right'; // mirror to the right
-							}
-							break;
-						case 'right':
-							if ((elemRect.right + calendarRect.width) > viewportWidth) {
-								if (auto) pos = 'left'; // mirror to the right
-							}
-							break;
-						case 'top':
-							if ((elemRect.top - calendarRect.height) < 0) {
-								if (auto) pos = 'bottom'; // mirror to the right
-							}
-							break;
-						case 'bottom':
-							if ((elemRect.bottom + calendarRect.height) > viewportHeight) {
-								if (auto) pos = 'left'; // mirror to the right
-							}
-							break;
-						case 'auto': pos = ''; break; // ignore
-					}
-					if (pos) {
-						classes.push(pos);
-					}
-				}
-				this._positions = classes;
+				this.updateElementPosition(this.$.calendar);
 			});
 		},
 		
@@ -815,11 +761,10 @@
 		 * Computes the #calendar component's class list.
 		 *
 		 * @param open Whether the calendar is open.
-		 * @param positions The positions array.
 		 * @return {String} The calendar container's classes.
 		 */
-		_computeCalendarClasses: function(open, positions) {
-			return positions.join(' ') + (open ? ' open' : '' );
+		_computeCalendarClasses: function(open) {
+			return (open ? ' open' : '' );
 		},
 		
 		/**

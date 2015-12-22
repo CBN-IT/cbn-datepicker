@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../cbn-form/lib/include.html">
+<link rel="import" href="../cbn-polymer-extensions/lib/position-behavior.html">
 <link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
 
 <link rel="import" href="../iron-icon/iron-icon.html" />
@@ -21,7 +22,7 @@
 				   on-keypress="_inputKeyPress" on-input="_inputValueChanged" 
 				   value="[[_inputValue]]" />
 			
-			<div id="calendar" class$="[[_computeCalendarClasses(_open, _positions)]]">
+			<div id="calendar" class$="[[_computeCalendarClasses(_open)]]">
 				<div class="calendar-head">
 					<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-back"
 									   on-tap="_navigatePrev"></paper-icon-button>
