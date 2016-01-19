@@ -262,6 +262,9 @@ Usage:
 			 * Opens up the calendar.
 			 */
 			open: function() {
+				if(this._open){
+					return;
+				}
 				if (this._date) {
 					this._setCalendarDate(this._date.clone());
 				}
