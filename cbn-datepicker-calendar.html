@@ -1,0 +1,679 @@
+<!--suppress JSUnusedGlobalSymbols -->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html" />
+<link rel="import" href="../iron-icons/iron-icons.html" />
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="lib/utils.html">
+<link rel="import" href="styles.html">
+
+<dom-module id="cbn-datepicker-calendar">
+	<template>
+		<style include="cbn-datepicker-calendar-styles"></style>
+		
+		<div class="calendar-head">
+			<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-back"
+							   on-tap="_navigatePrev"></paper-icon-button>
+			
+			<paper-button class$="[[_computeHeaderClasses(_headerCaptionL)]]"
+						  on-tap="_navigateHeaderL">{{ _headerCaptionL }}</paper-button>
+			<paper-button class$="[[_computeHeaderClasses(_headerCaptionR)]]"
+						  on-tap="_navigateHeaderR">{{ _headerCaptionR }}</paper-button>
+			
+			<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-forward"
+							   on-tap="_navigateNext"></paper-icon-button>
+		</div>
+		
+		<div id="content">
+			<template is="dom-repeat" id="days" items="[[_items]]" as="item">
+				<paper-button class$="[[_computeItemClasses(item, _selectedItemHash)]]"
+							  on-tap="_selectItem">[[item.label]]</paper-button>
+			</template>
+		</div>
+		
+		<div id="buttons">
+			<paper-icon-button class="icon" style="color: #4285f4;" icon="today"
+							   on-tap="setToday">Today</paper-icon-button>
+			<span class="separator"></span>
+			<paper-icon-button class="icon" style="color: red" icon="clear"
+							   on-tap="clear">Clear</paper-icon-button>
+		</div>
+		
+	</template>
+</dom-module>
+
+<script>
+	(function(scope, utils) {
+		utils = scope.DatePicker.Utils;
+		
+		//noinspection JSUnusedGlobalSymbols
+		Polymer({
+			is: 'cbn-datepicker-calendar',
+			
+			properties: {
+				
+				/**
+				 * The currently selected date (read-write property).
+				 * 
+				 * Uses the format specified by the `format` property.
+				 */
+				date: {
+					type: Object,
+					value: '',
+					notify: false, // manual bubbling notification
+					observer: '_dateChanged'
+				},
+				
+				/**
+				 * Specifies the format of the `date` value.
+				 * 
+				 * Should be a valid Moment.js format string or the special 'moment' keyword, which makes the 
+				 * `date` property to store a Moment object.
+				 */
+				format: {
+					type: String,
+					value: 'moment'
+				},
+				
+				/**
+				 * Specifies the minimum end of the calendar's date interval.
+				 * 
+				 * Uses Moment.js formatting extended with relative dates (see `Utils#parseDate`).
+				 */
+				minDate: {
+					type: String,
+					value: '-10y',
+					observer: '_minDateChanged'
+				},
+				
+				/**
+				 * Specifies the minimum end of the calendar's date interval.
+				 * 
+				 * Uses Moment.js formatting extended with relative dates (see `Utils#parseDate`).
+				 */
+				maxDate: {
+					type: String,
+					value: '+30y',
+					observer: '_maxDateChanged'
+				},
+				
+				/**
+				 * Specifies the maximum number of years to display in the calendar 'years range' view.
+				 * 
+				 * A zero value means show all years if min / max date is bounded, else defaults to 25 years.
+				 */
+				yearsRangeCount: {
+					type: Number,
+					value: 12
+				},
+				
+				/**
+				 * The current calendar view.
+				 */
+				currentView: {
+					type: String,
+					value: 'days',
+					notify: true
+				},
+				
+				// Private properties:
+				
+				/**
+				 * Stores the Moment object of the currently selected date.
+				 */
+				_date: {
+					type: Object,
+					value: null
+				},
+				
+				/**
+				 * Stores the currently selected calendar item (for the current view).
+				 * Used within the UI of the calendar to highlight the selected date.
+				 */
+				_selectedItemHash: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * The centered header strings to display at the top of the calendar.
+				 * Depends on the current view. For example: '2014-2015', 'July 2015' etc.
+				 */
+				_headerCaptionL: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * Same as `_headerCaptionL`, but stores the right side caption.
+				 */
+				_headerCaptionR: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * The moment.js date that defines the current calendar view.
+				 * Should never be null. Defaults to today.
+				 */
+				_viewDate: {
+					type: Object,
+					value: function () {
+						return moment()
+					}
+				},
+				
+				/**
+				 * An array with the date items objects that are currently displayed in the calendar.
+				 * 
+				 * The item's type depends on the current view.
+				 */
+				_items: {
+					type: Array,
+					value: function () { return []; }
+				}
+				
+			},
+			
+			observers: [
+				'_render(_viewDate, currentView, yearsRangeCount)'
+			],
+			
+			/**
+			 * Fired whenever the date is changed (either programmatically or by the user).
+			 * 
+			 * @event date-changed
+			 */
+			
+			/**
+			 * A read-only property that returns the descriptor object for the current view.
+			 *
+			 * @returns {Object}
+			 */
+			get _view() {
+				var view = this.currentView || 'days';
+				return CalendarViews[view];
+			},
+			
+			/**
+			 * Computes the number of years to draw.
+			 *
+			 * @returns {Number} The number of years to draw.
+			 */
+			get _yearsRangeCount() {
+				if (!this.yearsRangeCount) { // infer default value
+					if (this._minDate && this._maxDate) {
+						return Math.ceil(this._maxDate.diff(this._minDate, 'years', true));
+					} else return 25;
+				}
+				return /** @type {Number}*/ this.yearsRangeCount;
+			},
+			
+			/**
+			 * Element ready callback.
+			 */
+			ready: function () {
+				// nothing yet
+			},
+			
+			// API methods:
+				
+			/**
+			 * Changes the currently selected date (optional) and resets the calendar view.
+			 *
+			 * @param {String|Date|Moment|null} [date] The date to set. Optional.
+			 */
+			reset: function (date) {
+				this._selectDate(date);
+				this.currentView = 'days';
+			},
+			
+			/**
+			 * Sets the date to today.
+			 */
+			setToday: function () {
+				this._selectDate(moment());
+				this.currentView = 'days';
+			},
+			
+			/**
+			 * Clears the selection.
+			 */
+			clear: function() {
+				this._selectDate(null);
+			},
+			
+			// Misc. event handlers / observers:
+			
+			/**
+			 * Called when the `minDate` attribute is changed.
+			 */
+			_minDateChanged: function () {
+				this._minDate = utils.parseDate(/**@type {String}*/this.minDate, /**@type {String|Array}*/ this.format);
+			},
+			
+			/**
+			 * Called when the `maxDate` attribute is changed.
+			 */
+			_maxDateChanged: function () {
+				this._maxDate = utils.parseDate(/**@type {String}*/this.maxDate, /**@type {String|Array}*/ this.format);
+			},
+			
+			/**
+			 * Runs when the selected date is changed.
+			 */
+			_dateChanged: function (date) {
+				if (!this._dateIndirectlyChanged) {
+					var oldParsedDate = this._date;
+					this._selectDate(date);
+					if (oldParsedDate && this._date && this._date.diff(oldParsedDate, 'days') == 0) {
+						return; // skip redundant notification
+					}
+				}
+				
+				// Fire the notification event
+				var obj = {};
+				if (this._dateIndirectlyChanged && this._dateIndirectlyChanged !== true) {
+					obj = this._dateIndirectlyChanged;
+				}
+				obj.value = this.date;
+				this.fire('date-changed', obj);
+			},
+			
+			/**
+			 * Selects a new date.
+			 * 
+			 * @param {Date|moment|null} date The moment object of the new date to select.
+			 * @param {Object|null} [notificationObj] The notification object to use.
+			 */
+			_selectDate: function(date, notificationObj) {
+				var parsedDate = null;
+				if (date) {
+					parsedDate = utils.parseDate(date, /**@type {String|Array}*/ this.format);
+					if (!parsedDate.isValid())
+						parsedDate = null;
+					if (parsedDate) {
+						parsedDate = utils.boundDate(parsedDate, this._minDate, this._maxDate);
+					}
+				}
+				
+				this._date = parsedDate;
+				this._selectedItemHash = (this._date ? this._date.format(this._view.selectedFormat) : '' );
+				
+				if (notificationObj !== undefined) {
+					this._dateIndirectlyChanged = notificationObj;
+				} else {
+					this._dateIndirectlyChanged = true;
+				}
+				try {
+					this.date = utils.formatDate(parsedDate, /**@type {String|Array}*/this.format);
+				} finally {
+					this._dateIndirectlyChanged = null;
+				}
+				
+				// change the current view date
+				if (this._date == null) {
+					if (this._viewDate == null)
+						this._viewDate = moment(); // default to today
+					this.currentView = 'days';
+				} else {
+					this._viewDate = this._date.clone();
+				}
+			},
+			
+			// UI actions
+			
+			/**
+			 * Called when the user clicks a calendar item.
+			 * Sets the date and changes the view.
+			 */
+			_selectItem: function (event) {
+				var selectedItem = event.model.item;
+				if (!selectedItem.val)
+					return;
+				
+				this._selectedItemHash = selectedItem.val;
+				
+				var clickedDate = moment(selectedItem.val, this._view.selectedFormat);
+				if (!clickedDate || !clickedDate.isValid())
+					return;
+				
+				// if the user clicked a day from another month, navigate to the new month
+				if (this.currentView == 'days' && clickedDate.month() != this._viewDate.month()) {
+					this._selectDate(clickedDate, { viewChanged: true });
+					
+				} else {
+					this._viewDate = clickedDate;
+					// try to navigate down
+					this._navigateDown();
+				}
+			},
+			
+			/**
+			 * Navigates down from the current view hierarchy (i.e. from 'years' to 'months').
+			 * If already at the last view (days), will select the date (`_viewDate`)
+			 */
+			_navigateDown: function () {
+				if (this.currentView == 'days') {
+					this._selectDate(this._viewDate);
+					return;
+				}
+				if (this._view.navigateDown)
+					this.currentView = this._view.navigateDown;
+			},
+			
+			/**
+			 * Navigates up from the current view (i.e. from 'days' to 'months').
+			 * It's a no-op if already at the root view ('years').
+			 */
+			_navigateUp: function () {
+				if (this._view.navigateUp) {
+					this.currentView = this._view.navigateUp;
+					if (this.currentView == 'years') {
+						this._viewDate = this._normalizeYearsViewDate(this._viewDate, true);
+					}
+				}
+			},
+			
+			/**
+			 * Navigates to the left header button (whose action depends on the current view).
+			 */
+			_navigateHeaderL: function () {
+				// always navigate one view up
+				this._navigateUp();
+			},
+			
+			/**
+			 * Navigates to the right header button (whose action depends on the current view).
+			 */
+			_navigateHeaderR: function () {
+				switch (this.currentView) {
+					case 'days': // go to 'years'
+						this.currentView = 'years';
+						this._viewDate = this._normalizeYearsViewDate(this._viewDate, true);
+						break;
+				}
+			},
+			
+			/**
+			 * Navigates to the previous parent item (if available).
+			 */
+			_navigatePrev: function () {
+				var newDate = this._viewDate.clone();
+				if (this._view.navigateLR == 'yearsRange') {
+					newDate.subtract(5, 'y');
+					newDate = this._normalizeYearsViewDate(newDate);
+					
+				} else if (this._view.navigateLR) {
+					newDate.subtract(1, this._view.navigateLR);
+					newDate = utils.boundDate(newDate, this._minDate);
+				}
+				
+				this._viewDate = newDate;
+			},
+			
+			/**
+			 * Navigates to the next parent item (if available).
+			 */
+			_navigateNext: function () {
+				var newDate = this._viewDate.clone();
+				
+				if (this._view.navigateLR == 'yearsRange') {
+					newDate.add(5, 'y');
+					newDate = this._normalizeYearsViewDate(newDate);
+					
+				} else if (this._view.navigateLR) {
+					newDate.add(1, this._view.navigateLR);
+					newDate = utils.boundDate(newDate, null, this._maxDate);
+				}
+				
+				this._viewDate = newDate;
+			},
+			
+			/**
+			 * [Re]Renders the calendar.
+			 * 
+			 * Called whenever one of the calendar's parameters is changed.
+			 */
+			_render: function () {
+				this.debounce('render', function() {
+					// reset UI elements
+					this._headerCaptionL = '';
+					this._headerCaptionR = '';
+					this._items = [];
+					
+					if (this._view.displayHeaderL && this._view.displayHeaderL != 'special')
+						this._headerCaptionL = this._viewDate.format(this._view.displayHeaderL);
+					if (this._view.displayHeaderR)
+						this._headerCaptionR = this._viewDate.format(this._view.displayHeaderR);
+					
+					this[this._view.renderFun]();
+					
+					if (this.currentView == 'years') {
+						if (this._items.length) { // show years range
+							this._headerCaptionL = this._items[0].label +
+								' - ' + this._items[this._items.length - 1].label;
+						}
+					}
+					
+					this._selectedItemHash = (this._date ? this._date.format(this._view.selectedFormat) : '' );
+				});
+			},
+			
+			/**
+			 * Fills the `_items` property with the days to be printed on the calendar.
+			 * 
+			 * Used when the current view is 'days'.
+			 */
+			_renderDays: function () {
+				var start = this._viewDate.clone().startOf('month').day(0);
+				var end = this._viewDate.clone().endOf('month').day(6);
+				
+				var month = this._viewDate.month();
+				
+				// start by printing the week days
+				this.set('_items', this._getWeekDays());
+				
+				// now add each day of the month
+				moment()
+					.range(start, end)
+					.by('days', function (day) {
+						var item = {
+							val: day.format(this._view.selectedFormat),
+							label: day.format('D'),
+							cl: 'days'
+						};
+						
+						if ((this._minDate != null && this._minDate.isAfter(day)) ||
+							(this._maxDate != null && this._maxDate.isBefore(day))) {
+							item.cl += " disabled";
+							item.val = null;
+							
+						} else if (day.month() === month) {
+							item.cl += ' active';
+						} else {
+							item.cl += ' active fade';
+						}
+						if (moment().startOf("day").diff(day.startOf("day"), 'days') === 0) {
+							item.cl += " today";
+						}
+						
+						this.push('_items', item);
+						
+					}.bind(this));
+			},
+			
+			/**
+			 * Returns the UI items representing the week days.
+			 * 
+			 * Used when the current view is 'days'.
+			 */
+			_getWeekDays: function () {
+				var start = moment().day(0),
+					end = moment().day(6),
+					days = [];
+				moment()
+					.range(start, end)
+					.by('days', function (moment) {
+						days.push({
+							val: null,
+							label: moment.format('dd'),
+							cl: 'days heading'
+						});
+					}.bind(this));
+				return days;
+			},
+			
+			/**
+			 * Fills the `_items` property with the months to be printed on the calendar.
+			 *
+			 * Used when the current view is 'months'.
+			 */
+			_renderMonths: function () {
+				var start = this._viewDate.clone().startOf('year'),
+					end = this._viewDate.clone().endOf('year');
+				
+				this.set('_items', []);
+				moment()
+					.range(start, end)
+					.by('months', function (month) {
+						var item = {
+							val: month.format(this._view.selectedFormat),
+							label: month.format('MMM'),
+							cl: 'months'
+						};
+						
+						if ((this._minDate != null && this._minDate.isAfter(month.clone().endOf('month'))) ||
+							(this._maxDate != null && this._maxDate.isBefore(month.clone().startOf('month')))) {
+							item.cl += ' disabled';
+							item.val = null;
+						} else {
+							item.cl += ' active';
+						}
+						
+						this.push('_items', item);
+						
+					}.bind(this));
+			},
+			
+			/**
+			 * Fills the `_items` property with the days to be printed on the calendar.
+			 * 
+			 * Used when the current view is 'years'.
+			 */
+			_renderYears: function () {
+				this.set('_items', []);
+				var count = this._yearsRangeCount;
+				var start = this._normalizeYearsViewDate(this._viewDate);
+				var end = start.clone().add(count - 1, 'years');
+				end = utils.boundDate(end, null, this._maxDate);
+				
+				moment()
+					.range(start, end)
+					.by('years', function (year) {
+						this.push('_items', {
+							val: year.format(this._view.selectedFormat),
+							label: year.format('YYYY'),
+							cl: 'years active'
+						});
+					}.bind(this));
+			},
+			
+			/**
+			 * Normalizes the specified view date for the consistent rendering of the calendar years.
+			 * 
+			 * @param {moment}  date The current view date to normalize.
+			 * @param {Boolean} [mid] Whether the input date is at the center of the range.
+			 * @return {moment} The normalized start date of the rendered years interval.
+			 */
+			_normalizeYearsViewDate: function(date, mid) {
+				var count = this._yearsRangeCount;
+				var startYear = date.year();
+				var start = moment([startYear, 0, 1]);
+				if (mid) {
+					start.subtract(Math.floor(count / 2), 'years');
+					startYear = start.year();
+				}
+				start = utils.boundDate(start, this._minDate);
+				var minBounded = false;
+				if (start.year() != startYear) {
+					minBounded = true;
+					startYear = start.year();
+				}
+				start = moment([startYear, 0, 1]);
+				
+				var end = start.clone().add(count - 1, 'years');
+				end = utils.boundDate(end, null, this._maxDate);
+				end = moment([end.year(), 0, 1]);
+				if (!minBounded && end.diff(start, 'years') < count) {
+					// we're at the end of the range, limit the start date
+					start = end.clone().subtract(count - 1, 'years');
+					// min-bound again!
+					start = utils.boundDate(start, this._minDate);
+					start = moment([start.year(), 0, 1]);
+				}
+				
+				return start;
+			},
+			
+			// UI computed properties:
+			
+			/**
+			 * Computes a header caption's class list.
+			 *
+			 * @param value The text to display (if any).
+			 * @return {String} The header caption's classes.
+			 */
+			_computeHeaderClasses: function (value) {
+				return 'header' + (value ? '' : ' hidden' );
+			},
+			
+			/**
+			 * Computes a calendar item's classes.
+			 * @param item The item to compute the class for.
+			 * @param selectedValue The currently selected item.
+			 * @return {String} The item's classes.
+			 */
+			_computeItemClasses: function (item, selectedValue) {
+				return 'item ' + item.cl + (selectedValue == item.val ? ' selected' : '');
+			}
+			
+		});
+		
+		/**
+		 * Stores the view descriptors.
+		 * @type {Object}
+		 */
+		var CalendarViews = {
+			'days': {
+				selectedFormat: 'YYYY-MM-DD',
+				navigateUp: 'months',
+				displayHeaderL: 'MMM',
+				displayHeaderR: 'YYYY',
+				navigateLR: 'M',
+				renderFun: '_renderDays'
+			},
+			'months': {
+				selectedFormat: 'YYYY-MM',
+				navigateUp: 'years',
+				navigateDown: 'days',
+				navigateLR: 'y',
+				displayHeaderL: 'YYYY',
+				renderFun: '_renderMonths'
+			},
+			'years': {
+				selectedFormat: 'YYYY',
+				navigateDown: 'months',
+				displayHeaderL: 'special',
+				navigateLR: 'yearsRange',
+				renderFun: '_renderYears'
+			}
+		};
+		
+	})(window.Cbn);
+	
+</script>

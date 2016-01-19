@@ -1,3 +1,11 @@
+<!--
+`<cbn-datepicker>` is a date input that shows a calendar for picking up the value.
+
+Usage:
+    <cbn-datepicker name="year2k" value="01.01.2000" minDate="-1m" maxDate="+3y"></cbn-datepicker>
+
+-->
+<!--suppress JSUnusedGlobalSymbols -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../cbn-form/lib/include.html">
 <link rel="import" href="../cbn-polymer-extensions/lib/position-behavior.html">
@@ -9,7 +17,9 @@
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
 
+<link rel="import" href="lib/utils.html">
 <link rel="import" href="styles.html">
+<link rel="import" href="cbn-datepicker-calendar.html">
 
 <dom-module id="cbn-datepicker">
 	<template>
@@ -22,38 +32,499 @@
 				   on-keypress="_inputKeyPress" on-input="_inputValueChanged" 
 				   value="[[_inputValue]]" />
 			
-			<div id="calendar" class$="[[_computeCalendarClasses(_open)]]">
-				<div class="calendar-head">
-					<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-back"
-									   on-tap="_navigatePrev"></paper-icon-button>
-					
-					<paper-button class$="[[_computeHeaderClasses(_calendarHeaderL)]]"
-								  on-tap="_navigateHeaderL">{{ _calendarHeaderL }}</paper-button>
-					<paper-button class$="[[_computeHeaderClasses(_calendarHeaderR)]]"
-								  on-tap="_navigateHeaderR">{{ _calendarHeaderR }}</paper-button>
-					
-					<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-forward"
-									   on-tap="_navigateNext"></paper-icon-button>
-				</div>
-				
-				<div id="content">
-					<template is="dom-repeat" id="days" items="[[_calendarItems]]" as="item">
-						<paper-button class$="[[_computeItemClasses(item, _calendarSelectedItem)]]" 
-									  on-tap="_selectItem">[[item.label]]</paper-button>
-					</template>
-				</div>
-				
-				<div id="buttons">
-					<paper-icon-button class="icon" style="color: #4285f4;" icon="today" 
-									   on-tap="setToday">Today</paper-icon-button>
-					<span class="separator"></span>
-					<paper-icon-button class="icon" style="color: red" icon="clear" 
-									   on-tap="clear">Clear</paper-icon-button>
-				</div>
-			</div>
+			<cbn-datepicker-calendar id="calendar" date="{{_calendarDate}}" format="moment"
+									 min-date="[[minDate]]" max-date="[[maxDate]]"
+									 years-range-count="[[yearsRangeCount]]"
+									 current-view="{{_calendarView}}"
+									 on-date-changed="_calendarDateChanged"
+									 class$="[[_computeCalendarClasses(_open)]]"
+			></cbn-datepicker-calendar>
 		</div>
 		
 	</template>
 </dom-module>
 
-<script src="cbn-datepicker.js"></script>
+<script>
+	(function(scope, utils) {
+		utils = scope.DatePicker.Utils;
+		
+		//noinspection JSUnusedGlobalSymbols
+		Polymer({
+			is: 'cbn-datepicker',
+			
+			properties: {
+				
+				/**
+				 * The datepicker's resulting input value.
+				 * It contains always a correct date or a null / empty value otherwise.
+				 */
+				value: {
+					type: String,
+					value: '',
+					notify: false, // the observer handles the notifications
+					observer: '_valueChanged'
+				},
+				
+				/**
+				 * A placeholder to show when the value is empty.
+				 */
+				placeholder: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * The `format` attribute details http://momentjs.com/docs/#/parsing/string-format/.
+				 */
+				format: {
+					type: String,
+					value: 'DD MMMM YYYY'
+				},
+				
+				/**
+				 * The format to use for the input's model value ({@link #value} attribute).
+				 * If the value format is empty, then {@link #format} will be used.
+				 */
+				valueFormat: {
+					type: String,
+					value: 'YYYY-MM-DD'
+				},
+				
+				/**
+				 * Specifies the minimum end of the calendar's date interval.
+				 * Uses Moment.js formatting (see {@link #format}).
+				 */
+				minDate: {
+					type: String,
+					value: '-10y',
+					observer: '_minDateChanged'
+				},
+				
+				/**
+				 * Specifies the minimum end of the calendar's date interval.
+				 * Uses Moment.js formatting (see {@link #format}).
+				 */
+				maxDate: {
+					type: String,
+					value: '+10y',
+					observer: '_maxDateChanged'
+				},
+				
+				/**
+				 * Specifies the maximum number of years to display in the calendar 'years range' view.
+				 * Zero means show all years if min / max date is bounded, else defaults to 25 years.
+				 */
+				yearsRangeCount: {
+					type: Number,
+					value: 0
+				},
+				
+				/**
+				 * The position to show the calendar / picker.
+				 *
+				 * See `PositionBehavior` for mode details.
+				 */
+				position: {
+					type: String,
+					value: "left bottom",
+					observer: '_updatePosition'
+				},
+				
+				// Private properties:
+				
+				/**
+				 * Stores the currently selected date as a Moment.js object.
+				 *
+				 * Null if no date is selected / the value is empty.
+				 */
+				_date: {
+					type: Object,
+					value: null
+				},
+				
+				/**
+				 * Whether the calendar is currently open.
+				 */
+				_open: {
+					type: Boolean,
+					value: false
+				},
+				
+				/**
+				 * The user input's value containing the selected date or the value that the user is currently editing.
+				 */
+				_inputValue: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * The moment.js date that defines the current calendar view.
+				 */
+				_calendarDate: {
+					type: Object,
+					value: null
+				},
+				
+				/**
+				 * The current calendar view.
+				 */
+				_calendarView: {
+					type: String,
+					value: 'days'
+				},
+				
+				/**
+				 * True if the input needs to be refocused after the calendar closes.
+				 */
+				_refocus: {
+					type: Boolean,
+					value: false
+				}
+				
+			},
+			
+			behaviors: [
+				CbnForm.InputElement,
+				CbnForm.Validatable,
+				CbnForm.DynamicElement,
+				Cbn.PositionBehavior
+			],
+			
+			/**
+			 * Element's dynamically-configurable attributes.
+			 * @type {Object}
+			 */
+			dynamicAttributes: {
+				format: true,
+				minDate: true,
+				maxDate: true,
+				position: true,
+				placeholder: true
+			},
+			
+			/**
+			 * Will be set to true while the `value` property is changed internally.
+			 */
+			_dateValueUserChanged: false,
+			
+			ready: function() {
+				this._readied = true;
+				this._valueChanged();
+			},
+			
+			// API methods:
+			
+			/**
+			 * Overrides the `CbnForm.Validatable`'s `validate()` method to validate the input value.
+			 */
+			validate: function() {
+				var result = false;
+				if (this._inputValue) {
+					result = this._validateDate(this._inputValue);
+				}
+				if (!result) {
+					this.fire('cbn-form-validate', { result: result });
+					return result;
+				}
+				return CbnForm.Validatable.validate.call(this);
+			},
+			
+			/**
+			 * Changes the currently selected date.
+			 *
+			 * @param {String|Date|Moment|null} date The date to set. Accepts both Strings and Moment / Date objects.
+			 */
+			setDate: function(date) {
+				this._setDate(date);
+				this._updateValue();
+				this._updateDisplayValue();
+			},
+			
+			/**
+			 * Sets the date to today.
+			 */
+			setToday: function() {
+				this._calendarView = 'days';
+				this.setDate(moment());
+				this.close();
+			},
+			
+			/**
+			 * Clears the selected date.
+			 */
+			clear: function() {
+				this.setDate('');
+				this.close();
+			},
+			
+			/**
+			 * Opens up the calendar.
+			 */
+			open: function() {
+				if (this._date) {
+					this._setCalendarDate(this._date.clone());
+				}
+				this._open = true;
+				this._calendarView = 'days';
+				this._updatePosition();
+			},
+			
+			/**
+			 * Hides the calendar.
+			 */
+			close: function() {
+				this._refocus = false;
+				this._open = false;
+			},
+			
+			// Input value / date conversion logic
+			
+			/**
+			 * Parses and sets the internal `_date` value to the specified value.
+			 *
+			 * Note: doesn't update the displayed / input values.
+			 * Call `_updateDisplayValue` and/or `_updateValue` for doing this.
+			 *
+			 * @param {String|Date|Moment|null} date The date to set. Accepts both Strings and Moment / Date objects.
+			 */
+			_setDate: function(date) {
+				var parsedDate = null;
+				if (date) {
+					parsedDate = utils.parseDate(date, [ this.valueFormat, this.format ]);
+					if (!parsedDate.isValid())
+						parsedDate = null;
+					if (parsedDate) {
+						parsedDate = utils.boundDate(parsedDate, this._minDate, this._maxDate);
+					}
+				}
+				
+				this._date = parsedDate;
+				
+				// set the view / selected calendar dates
+				this._setCalendarDate(/**@type {moment}*/this._date ? this._date.clone() : null);
+			},
+			
+			/**
+			 * Sets the calendar date to the specified moment object.
+			 * 
+			 * @param {moment} date The date to set.
+			 */
+			_setCalendarDate: function(date) {
+				this._settingCalendarDate = true;
+				try {
+					this._calendarDate = date;
+				} finally {
+					this._settingCalendarDate = false;
+				}
+			},
+			
+			/**
+			 * Updates the user-displayed input value to reflect the current {@link #_date} value.
+			 */
+			_updateDisplayValue: function() {
+				this._inputValue = (this._date ? this._date.format(this.format) : '');
+			},
+			
+			/**
+			 * Updates the input's `value` property from the current {@link #_date} value.
+			 */
+			_updateValue: function() {
+				this._dateValueUserChanged = true;
+				try {
+					this._setValue(this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '');
+				} finally {
+					this._dateValueUserChanged = false;
+				}
+			},
+			
+			/**
+			 * Override the FormElement's value observer to prevent firing multiple `value-changed` events.
+			 * We use our own transaction system.
+			 */
+			_fe_valueChanged: function() {
+			},
+			
+			/**
+			 * Called when the input's value property is indirectly changed (e.g. by the form).
+			 */
+			_valueChanged: function() {
+				if (!this._readied) return;
+				
+				if (!this._dateValueUserChanged) {
+					this._setDate(this.value);
+					this._updateDisplayValue();
+				}
+				var newValue = ( this._date ? this._date.format( this.valueFormat ? this.valueFormat : this.format ) : '' );
+				if (this.value != newValue || this._inputValueIndirectlyChanged) {
+					// notify the parent form that our value was re-formatted
+					this._setIndirectValue(newValue, {
+						'reformatted': true
+					});
+				} else {
+					this.fire('value-changed', {
+						value: this.value
+					});
+				}
+			},
+			
+			/**
+			 * Called when the user picks a new date inside the calendar.
+			 */
+			_calendarDateChanged: function(event) {
+				if (this._settingCalendarDate) return;
+				this.setDate(event.detail.value);
+				
+				// only close if the calendar view hasn't changed while selecting the date
+				if (!event.detail.viewChanged)
+					this.close();
+			},
+			
+			/**
+			 * Called when the user changes the text input.
+			 *
+			 * If the text entered is parse-able as date, changes the currently selected date.
+			 * If empty, it clears the input date.
+			 */
+			_inputValueChanged: function(event) {
+				var input = event.currentTarget;
+				// backup the input's selection
+				var start = input.selectionStart,
+					end = input.selectionEnd;
+				
+				this._inputValue = input.value;
+				if (!this._inputValue || this._validateDate(this._inputValue)) {
+					this._setDate(this._inputValue);
+					this._updateValue();
+				}
+				
+				// restore the selection
+				input.setSelectionRange(start, end);
+			},
+			
+			
+			// Misc. event handlers / observers:
+			
+			/**
+			 * Callback when an element instance is attached to the DOM. Used to set up event handlers.
+			 */
+			attached: function() {
+				// capture those events for the element itself and all its children
+				this.addEventListener('focus', this._focusHandler, true);
+				this.addEventListener('blur', this._blurHandler, true);
+			},
+			
+			/**
+			 * Callback when an element instance is attached to the DOM. Used to clean up event handlers.
+			 */
+			detached: function() {
+				this.removeEventListener('focus', this._focusHandler, true);
+				this.removeEventListener('blur', this._blurHandler, true);
+			},
+			
+			/**
+			 * Called when the `minDate` attribute is changed.
+			 */
+			_minDateChanged: function () {
+				this._minDate = utils.parseDate(/**@type {String}*/this.minDate, [this.format, this.valueFormat]);
+			},
+			
+			/**
+			 * Called when the `maxDate` attribute is changed.
+			 */
+			_maxDateChanged: function () {
+				this._maxDate = utils.parseDate(/**@type {String}*/this.maxDate, [this.format, this.valueFormat]);
+			},
+			
+			/**
+			 * Captures the input key events to listen for special keys.
+			 *
+			 * @param event The key event.
+			 */
+			_inputKeyPress: function(event) {
+				if (event.charCode == 13) { // Enter
+					this._setDate(this._inputValue);
+					this._updateValue();
+				}
+			},
+			
+			/**
+			 * Captures the focus event on any of the element's children.
+			 */
+			_focusHandler: function (event) {
+				if (event.target == this || this.contains(event.target)) {
+					this._refocus = false;
+					this.open();
+				}
+			},
+			
+			/**
+			 * Captures the blur event on any of the element's children.
+			 */
+			_blurHandler: function() {
+				this.async(function() {
+					if (this._refocus || this.contains(document.activeElement)) {
+						this.$.input.focus();
+					} else {
+						this.close();
+					}
+				});
+			},
+			
+			/**
+			 * Requests the datepicker's input to be refocused after the calendar is closed.
+			 */
+			_refocusInput: function() {
+				this._refocus = true;
+			},
+			
+			
+			// UI-related functions
+			
+			/**
+			 * Updates the calendar's position.
+			 *
+			 * Called automatically when the date picker opens.
+			 */
+			_updatePosition: function() {
+				if (!this._open)
+					return;
+				
+				// wait for CSS to get processed
+				this.async(function() {
+					this.updateElementPosition(this.$.calendar);
+				});
+			},
+			
+			// UI computation methods:
+			
+			/**
+			 * Computes the #calendar component's class list.
+			 *
+			 * @param open Whether the calendar is open.
+			 * @return {String} The calendar container's classes.
+			 */
+			_computeCalendarClasses: function(open) {
+				return (open ? ' open' : '' );
+			},
+			
+			/**
+			 * validates the specified date string and returns true if parseable.
+			 *
+			 * @param {String} dateStr The date string to validate.
+			 * @returns {Boolean} Whether the string is valid.
+			 */
+			_validateDate: function(dateStr) {
+				if (!dateStr) return false;
+				var parsed = utils.parseDate(dateStr, [ this.valueFormat, this.format ]);
+				return (parsed && parsed.isValid());
+			}
+			
+		});
+		
+		CbnForm.registerElement('cbn-datepicker', {
+			types: ['date']
+		});
+		
+	})(window.Cbn);
+</script>

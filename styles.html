@@ -1,178 +1,160 @@
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../paper-styles/shadow.html">
 
-<dom-module id="cbn-datepicker-styles-private"><template>
-	<style>
-		:host {
-		    display: block;
-		    margin: 0;
-		    position: relative;
-		}
-		
-		.field {
-		    position: relative;
-		}
-		
-		#container {
-			outline: none;
-		}
-		
-		#input {
-		    display: block;
-			width: auto;
-			@apply(--layout-flex);
-		}
-		:host(.paper-input-input) #input {
-			position: relative; /* to make a stacking context */
-			outline: none;
-			box-shadow: none;
-			padding: 0;
-			width: 100%;
-			background: transparent;
-			border: none;
-			color: var(--paper-input-container-input-color, --primary-text-color);
-			-webkit-appearance: none;
-			text-align: inherit;
+<dom-module id="cbn-datepicker-styles-private"><template><style>
+	:host {
+		display: block;
+		margin: 0;
+		position: relative;
+	}
+	
+	.field {
+		position: relative;
+	}
+	
+	#container {
+		outline: none;
+	}
+	
+	#input {
+		display: block;
+		width: auto;
+		@apply(--layout-flex);
+	}
+	:host(.paper-input-input) #input {
+		position: relative;
+		outline: none;
+		box-shadow: none;
+		padding: 0;
+		width: 100%;
+		border: none;
+		-webkit-appearance: none;
+		text-align: inherit;
 
-			@apply(--paper-font-subhead);
-			@apply(--paper-input-container-input);
-		}
+		@apply(--paper-font-subhead);
+		@apply(--paper-input-container-input);
+	}
+	
+	#calendar {
+		display: none;
+		background-color: white;
+		border-radius: 6px;
+		padding: 5px;
+		position: fixed;
+		z-index: 9999;
 		
-		#calendar {
-			display: none;
-		    width: 224px;
-		    font-size: 18px;
-		    font-weight: 200;
-		    background-color: white;
-		    border-radius: 6px;
-		    padding: 5px;
-		    position: fixed;
-		    text-align: center;
-		    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-		    z-index: 9999;
-			
-			@apply(--shadow-elevation-2dp);
-		}
+		@apply(--shadow-elevation-2dp);
+	}
+	
+	#calendar.open {
+		display: block;
+	}
+	
+	.hidden {
+		display: none;
+	}
+	
+</style></template></dom-module>
+
+<dom-module id="cbn-datepicker-calendar-styles"><template><style>
+	
+	:host {
+		display: block;
+		position: relative;
+		width: 224px;
+		margin: 0;
+		padding: 5px;
 		
-		#calendar.open {
-		    display: block;
-		}
+		background-color: white;
+		text-align: center;
+		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	}
+	
+	.calendar-header {
+		font-size: 1em;
+		font-weight: bold;
+		@apply(--layout-horizontal);
+	}
+	
+	.header {
+		@apply(--layout-flex);
+		text-align: center;
+		height: 40px;
+		min-width: initial;
+		font-weight: bold;
 		
-		.calendar-head {
-		    background: inherit;
-		    color: inherit;
-		    font-size: 1em;
-			@apply(--layout-horizontal);
-		}
-		
-		#content {
-		    margin-bottom: 2px;
-			@apply(--layout-horizontal);
-			@apply(--layout-wrap);
-			@apply(--layout-justified);
-		}
-		
-		#buttons {
-			@apply(--layout-horizontal);
-		}
-		#buttons .separator {
-			@apply(--layout-flex);
-		}
-		
-		.header {
-		    text-align: center;
-		    min-width: initial;
-		    height: 40px
-		}
-		
-		.days {
-		    border-radius: 50%;
-		    width: 32px;
-		    line-height: 32px;
-		    min-width: initial;
-		    text-align: center;
-		    padding: 0;
-		    margin: 0;
-		    font-weight: 400;
-		    font-size: 12px;
-		}
-		
-		.days.fade, .months.fade {
-		    color: #c9c9c9;
-		}
-		
-		.months {
-		    border-radius: 50%;
-		    width: 50px;
-		    min-width: initial;
-		    line-height: 50px;
-		    text-align: center;
-		    padding: 0;
-		    margin: 0;
-		    font-weight: 400;
-		    font-size: 12px;
-		}
-		
-		.years {
-		    border-radius: 50%;
-		    width: 40px;
-		    min-width: initial;
-		    line-height: 32px;
-		    text-align: center;
-		    padding: 0 0 0 0;
-		    margin: 0;
-		    font-weight: 400;
-		    font-size: 12px;
-		}
-		
-		.days.selected,
-		.months.selected,
-		.years.selected,
-		.days.fade.selected, 
-		.days.fade.selected {
-			color: #222;
-		    background-color: #c9c9c9;
-		}
-		
-		paper-button.colored {
-		    color: #4285f4;
-		    fill: #4285f4;
-		}
-		
-		paper-button.flex {
-			@apply(--layout-flex);
-		}
-		
-		paper-icon-button.icon {
-		    margin: 0;
-		}
-		
-		.hidden {
-		    display: none;
-		}
-		
-		.today {
-		    color: #4285f4;
-		}
-		
-		#calendar.bottom {
-		    top: 100%;
-			margin-top: 7px;
-		}
-		#calendar.top {
-		    bottom: 100%;
-			margin-bottom: 7px;
-		}
-		#calendar.right {
-		    left: 100%;
-		    top: 0;
-		    margin-left: 10px;
-		}
-		#calendar.left {
-		    right: 100%;
-		    top: 0;
-		    margin-right: 10px;
-		}
-		
-	</style>
-</template></dom-module>
+		color: #4285f4;
+		fill: #4285f4;
+	}
+	
+	#buttons {
+		@apply(--layout-horizontal);
+	}
+	#buttons .separator {
+		@apply(--layout-flex);
+	}
+	
+	#content {
+		margin-bottom: 2px;
+		@apply(--layout-horizontal);
+		@apply(--layout-wrap);
+		@apply(--layout-start-justified);
+	}
+	
+	#content .item {
+		padding: 0;
+		margin: 0;
+		min-height: initial;
+		font-size: 0.75em;
+		border-radius: 50%;
+		text-align: center;
+		min-width: 0;
+		line-height: 2.5em;
+	}
+	
+	#content .item.fade {
+		color: #D0D0D0;
+	}
+	#content .item.disabled {
+		color: #c9c9c9;
+		text-shadow: 1px 1px #DEDEDE;
+	}
+	
+	#content .item.heading {
+		color: #666;
+		font-weight: bold;
+	}
+	
+	#content .item.days {
+		flex-basis: 14.285%; /* div 7 */
+	}
+	
+	#content .item.today {
+		color: #4285f4;
+	}	
+	
+	#content .item.months {
+		flex-basis: 25%; /* div 4 */
+		line-height: 4em;
+	}
+	
+	#content .item.years {
+		flex-basis: 20%; /* div 5 */
+		line-height: 4em;
+	}
+	
+	#content .item.selected,
+	#content .item.fade.selected {
+		color: #222;
+		background-color: #c9c9c9;
+	}
+	
+	paper-icon-button.icon {
+		margin: 0;
+	}
+	
+	.hidden {
+		display: none;
+	}
+	
+</style></template></dom-module>

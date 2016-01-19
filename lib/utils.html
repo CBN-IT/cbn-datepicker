@@ -1,0 +1,157 @@
+<script>
+	(function (scope) {
+		scope = window.Cbn = window.Cbn || {};
+		scope.DatePicker = scope.DatePicker || {};
+		
+		/**
+		 * Contains utility date manipulation functions for used by the date picker / calendar elements.
+		 */
+		scope.DatePicker.Utils = {
+			
+			/**
+			 * Parses a date string using the specified format and returns a Moment.js object.
+			 *
+			 * Additionally, it parses a custom relative date format, e.g. '+1month -1d' (one month minus 1 day from today).
+			 *
+			 * Objects can be either full names (e.g. 'days', 'years') or Moment shortands (e.g. 'm', 'd', 'Q').
+			 * Several notes regarding Moment's for  object values:
+			 *
+			 * - months are zero-based;
+			 * - days (of months) are one-based (e.g. 1 - 31);
+			 * - for both of the above, if the range is exceeded, it will bubble up the next month / year.
+			 *
+			 * Specifiers include '+' (addition to today's date), '-' (subtraction) and '=' (override a date parameter).
+			 *
+			 * More relative date examples:
+			 *
+			 * - '+1d': tomorrow (uses a Moment shortand);
+			 * - '=1d =1month': '01.01' of the current year;
+			 * - '-1y =1m =1d': first day of the previous year;
+			 *
+			 * Also accepts Date and moment objects, converting / cloning them to a new Moment object.
+			 *
+			 * @param {String|Date|moment} dateStr The input date.
+			 * @param {String|Array}       format The format[s] to try for parsing.
+			 * @param {moment|Date}        [referenceDate] The reference date for relative formats; defaults to today.
+			 * @returns {moment|null} The Moment object representing the date.
+			 */
+			parseDate: function (dateStr, format, referenceDate) {
+				var date = null;
+				if (dateStr != null) {
+					if (typeof dateStr === "string") {
+						var shortands = {
+							'm': 'months',
+							'd': 'days',
+							'y': 'years'
+						};
+						var pattern = /([+=-])([+-]?[0-9]+)\s*([a-z]+)/ig;
+						var matches = pattern.exec(dateStr);
+						if (matches) { // it's a relative date
+							if (!referenceDate) referenceDate = moment();
+							date = moment(referenceDate).startOf("day");
+							while (matches) {
+								var op = matches[1];
+								var value = parseInt(matches[2], 10);
+								var name = matches[3];
+								if (shortands.hasOwnProperty(name.toLowerCase())) {
+									name = shortands[name.toLowerCase()];
+								}
+								switch (op) {
+									case '+':
+										date.add(value, name);
+										break;
+									case '-':
+										date.subtract(value, name);
+										break;
+									case '=':
+										date.set(name, value);
+										break;
+								}
+								matches = pattern.exec(dateStr);
+							}
+							
+						} else {
+							if (format == 'moment') {
+								// invalid value, should have been a Moment object
+								return null;
+							}
+							date = moment(dateStr, format);
+						}
+					} else {
+						date = moment(dateStr);
+					}
+				}
+				return date;
+			},
+			
+			/**
+			 * Formats the specified Moment date object (which can be null, in which case returns the empty string).
+			 * 
+			 * Also handles a special 'moment' value, which returns the value as a moment object.
+			 *
+			 * @param {moment}  date The date to format (a moment object).
+			 * @param {String|Array} format The destination format.
+			 * @returns {moment|string} The formatted date.
+			 */
+			formatDate: function(date, format) {
+				if (format && Array.isArray(format)) {
+					format = format[0];
+				}
+				if (format == 'moment')
+					return date;
+				return ( date ? date.format(format) : '' );
+			},
+			
+			/**
+			 * Takes an arbitrary moment object and limits it using the specified `minDate` and `maxDate` values.
+			 * 
+			 * If it is outside the bounds, it returns the unaltered object, otherwise it returns a clone of the 
+			 * min / max dates.
+			 *
+			 * @param {moment} date    The date to be bounded.
+			 * @param {moment|null} [minDate] The min date.
+			 * @param {moment|null} [maxDate] The max date.
+			 * @return {moment} A date within the limits.
+			 */
+			boundDate: function (date, minDate, maxDate) {
+				if (minDate != null && date.isBefore(minDate)) {
+					return minDate.clone();
+				}
+				if (maxDate != null && date.isAfter(maxDate)) {
+					return maxDate.clone();
+				}
+				return date;
+			}
+			
+		};
+		
+		/**
+		 * JSDoc definition for commonly used Moment object functions.
+		 * 
+		 * @typedef {Object} moment
+		 * @property {Function} clone
+		 * @property {Function} parse
+		 * @property {Function} format
+		 * @property {Function} add
+		 * @property {Function} subtract
+		 * @property {Function} startOf
+		 * @property {Function} set
+		 * @property {Function} get
+		 * @property {Function} year
+		 * @property {Function} month
+		 * @property {Function} day
+		 * @property {Function} isValid
+		 * @property {Function} isBefore
+		 * @property {Function} isAfter
+		 */
+		
+		/**
+		 * JSDoc for the moment() factory function.
+		 * 
+		 * @name moment
+		 * @param {*} object
+		 * @return {moment}
+		 */
+		
+	})();
+</script>

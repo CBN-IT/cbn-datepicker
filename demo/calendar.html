@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title>Standalone Calendar Demo</title>
+	
+	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+	
+	<link rel="import" href="../cbn-datepicker-calendar.html">
+	
+</head>
+<body>
+
+<div style="width: 500px; margin: 50px auto;">
+	<h1>Standalone Calendar Demo</h1>
+	
+	<template is="dom-bind">
+		
+		<div>
+			<cbn-datepicker-calendar name="date1" date="{{date1}}" format="DD.MM.YYYY"></cbn-datepicker-calendar>
+		</div>
+		
+		<p style="font-weight: bold;">Output: </p>
+		<pre id="stringifiedJson"></pre>
+		
+	</template>
+
+</div>
+	
+<script>
+	var tpl = document.querySelector('template[is=dom-bind]');
+	
+	function updateOutput(ev) {
+		console.trace('date changed', ev.detail);
+		
+		var val = ev.target.date;
+		tpl.model[ev.target.getAttribute('name')] = val;
+		
+		/** @namespace tpl.$.stringifiedJson */
+		tpl.$.stringifiedJson.textContent = JSON.stringify(tpl.model, null, 4);
+	}
+	document.addEventListener('date-changed', updateOutput);
+	
+	tpl.model = {
+		date1: ''
+	};
+	
+</script>
+
+</body>
+</html>
