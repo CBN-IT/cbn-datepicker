@@ -456,7 +456,12 @@ Usage:
 			 */
 			_focusHandler: function (event) {
 				this.$.input.focus();
-				this.$.input.setSelectionRange(this.$.input.value.length,this.$.input.value.length);
+				var valLength = 0;
+				/*just in case value is null*/
+				if (this.$.input.value) {
+					valLength = this.$.input.value.length;
+				}
+				this.$.input.setSelectionRange(valLength, valLength);
 				this.open();
 			},
 			
