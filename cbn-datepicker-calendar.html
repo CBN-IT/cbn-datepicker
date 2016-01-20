@@ -641,6 +641,10 @@
 			_computeItemClasses: function (item, selectedValue) {
 				return 'item ' + item.cl + (selectedValue == item.val ? ' selected' : '');
 			},
+			/**
+			 * Prevents the focus if attached on-mousedown event (because it's mousedown, blur, focus, etc)
+			 * On-tap still works :D
+			 */ 
 			_preventFocus: function(event){
 				event.preventDefault();
 			}
