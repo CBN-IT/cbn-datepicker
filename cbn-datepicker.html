@@ -25,7 +25,7 @@ Usage:
 	<template>
 		<style include="cbn-datepicker-styles-private"></style>
 		
-		<div id="container" tabindex="-1" on-mousedown="_refocusInput">
+		<div id="container">
 			
 			<input id="input" placeholder$="[[placeholder]]" title="[[title]]" 
 				   on-focus="open" on-tap="open" autocomplete="off"
@@ -455,32 +455,17 @@ Usage:
 			 * Captures the focus event on any of the element's children.
 			 */
 			_focusHandler: function (event) {
-				if (event.target == this || this.contains(event.target)) {
-					this._refocus = false;
-					this.open();
-				}
+				this.$.input.focus();
+				this.$.input.setSelectionRange(this.$.input.value.length,this.$.input.value.length);
+				this.open();
 			},
 			
 			/**
 			 * Captures the blur event on any of the element's children.
 			 */
 			_blurHandler: function() {
-				this.async(function() {
-					if (this._refocus || this.contains(document.activeElement)) {
-						this.$.input.focus();
-					} else {
-						this.close();
-					}
-				});
+				this.close();
 			},
-			
-			/**
-			 * Requests the datepicker's input to be refocused after the calendar is closed.
-			 */
-			_refocusInput: function() {
-				this._refocus = true;
-			},
-			
 			
 			// UI-related functions
 			

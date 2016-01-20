@@ -17,30 +17,30 @@
 		
 		<div class="calendar-header">
 			<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-back"
-							   on-tap="_navigatePrev"></paper-icon-button>
+							   on-tap="_navigatePrev" on-mousedown="_preventFocus" tabindex="-1"></paper-icon-button>
 			
 			<paper-button class$="[[_computeHeaderClasses(_headerCaptionL)]]"
-						  on-tap="_navigateHeaderL">{{ _headerCaptionL }}</paper-button>
+						  on-tap="_navigateHeaderL" on-mousedown="_preventFocus" tabindex="-1">{{ _headerCaptionL }}</paper-button>
 			<paper-button class$="[[_computeHeaderClasses(_headerCaptionR)]]"
-						  on-tap="_navigateHeaderR">{{ _headerCaptionR }}</paper-button>
+						  on-tap="_navigateHeaderR" on-mousedown="_preventFocus" tabindex="-1">{{ _headerCaptionR }}</paper-button>
 			
 			<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-forward"
-							   on-tap="_navigateNext"></paper-icon-button>
+							   on-tap="_navigateNext" on-mousedown="_preventFocus" tabindex="-1"></paper-icon-button>
 		</div>
 		
 		<div id="content">
 			<template is="dom-repeat" id="days" items="[[_items]]" as="item">
 				<paper-button class$="[[_computeItemClasses(item, _selectedItemHash)]]"
-							  on-tap="_selectItem">[[item.label]]</paper-button>
+							  on-tap="_selectItem" on-mousedown="_preventFocus" tabindex="-1">[[item.label]]</paper-button>
 			</template>
 		</div>
 		
 		<div id="buttons">
 			<paper-icon-button class="icon" style="color: #4285f4;" icon="today"
-							   on-tap="setToday">Today</paper-icon-button>
+							   on-tap="setToday" on-mousedown="_preventFocus" tabindex="-1">Today</paper-icon-button>
 			<span class="separator"></span>
 			<paper-icon-button class="icon" style="color: red" icon="clear"
-							   on-tap="clear">Clear</paper-icon-button>
+							   on-tap="clear" on-mousedown="_preventFocus" tabindex="-1">Clear</paper-icon-button>
 		</div>
 		
 	</template>
@@ -640,6 +640,9 @@
 			 */
 			_computeItemClasses: function (item, selectedValue) {
 				return 'item ' + item.cl + (selectedValue == item.val ? ' selected' : '');
+			},
+			_preventFocus: function(event){
+				event.preventDefault();
 			}
 			
 		});
