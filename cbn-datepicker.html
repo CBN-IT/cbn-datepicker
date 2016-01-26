@@ -9,13 +9,8 @@ Usage:
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../cbn-form/lib/include.html">
 <link rel="import" href="../cbn-polymer-extensions/lib/position-behavior.html">
+<link rel="import" href="../cbn-polymer-extensions/lib/focusable-behavior.html">
 <link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
-
-<link rel="import" href="../iron-icon/iron-icon.html" />
-<link rel="import" href="../iron-icons/iron-icons.html" />
-
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-button/paper-button.html">
 
 <link rel="import" href="lib/utils.html">
 <link rel="import" href="styles.html">
@@ -25,22 +20,18 @@ Usage:
 	<template>
 		<style include="cbn-datepicker-styles-private"></style>
 		
-		<div id="container">
-			
-			<input id="input" placeholder$="[[placeholder]]" title="[[title]]" 
-				   on-focus="open" on-tap="open" autocomplete="off"
-				   on-keypress="_inputKeyPress" on-input="_inputValueChanged" 
-				   value="[[_inputValue]]" />
-			
-			<cbn-datepicker-calendar id="calendar" date="{{_calendarDate}}" format="moment"
-									 min-date="[[minDate]]" max-date="[[maxDate]]"
-									 years-range-count="[[yearsRangeCount]]"
-									 current-view="{{_calendarView}}"
-									 on-date-changed="_calendarDateChanged"
-									 class$="[[_computeCalendarClasses(_open)]]"
-			></cbn-datepicker-calendar>
-		</div>
+		<input id="input" placeholder$="[[placeholder]]" title="[[title]]" 
+			   on-focus="open" on-tap="open" autocomplete="off"
+			   on-keypress="_inputKeyPress" on-input="_inputValueChanged" 
+			   value="[[_inputValue]]" />
 		
+		<cbn-datepicker-calendar id="calendar" date="{{_calendarDate}}" format="moment"
+								 min-date="[[minDate]]" max-date="[[maxDate]]"
+								 years-range-count="[[yearsRangeCount]]"
+								 current-view="{{_calendarView}}"
+								 on-date-changed="_calendarDateChanged"
+								 class$="[[_computeCalendarClasses(_open)]]"></cbn-datepicker-calendar>
+	
 	</template>
 </dom-module>
 
@@ -175,11 +166,12 @@ Usage:
 				},
 				
 				/**
-				 * True if the input needs to be refocused after the calendar closes.
+				 * The element that should retain the focus.
 				 */
-				_refocus: {
-					type: Boolean,
-					value: false
+				focusTarget: {
+					type: Object,
+					value: function() { //noinspection JSUnresolvedVariable
+						return ( this.$ && this.$.input ? this.$.input : this ); }
 				}
 				
 			},
@@ -188,8 +180,14 @@ Usage:
 				CbnForm.InputElement,
 				CbnForm.Validatable,
 				CbnForm.DynamicElement,
-				Cbn.PositionBehavior
+				Cbn.PositionBehavior,
+				Cbn.FocusableBehavior
 			],
+			
+			listeners: {
+				'focus-in': 'open',
+				'focus-out': 'close'
+			},
 			
 			/**
 			 * Element's dynamically-configurable attributes.
@@ -409,23 +407,6 @@ Usage:
 			// Misc. event handlers / observers:
 			
 			/**
-			 * Callback when an element instance is attached to the DOM. Used to set up event handlers.
-			 */
-			attached: function() {
-				// capture those events for the element itself and all its children
-				this.addEventListener('focus', this._focusHandler, true);
-				this.addEventListener('blur', this._blurHandler, true);
-			},
-			
-			/**
-			 * Callback when an element instance is attached to the DOM. Used to clean up event handlers.
-			 */
-			detached: function() {
-				this.removeEventListener('focus', this._focusHandler, true);
-				this.removeEventListener('blur', this._blurHandler, true);
-			},
-			
-			/**
 			 * Called when the `minDate` attribute is changed.
 			 */
 			_minDateChanged: function () {
@@ -449,27 +430,6 @@ Usage:
 					this._setDate(this._inputValue);
 					this._updateValue();
 				}
-			},
-			
-			/**
-			 * Captures the focus event on any of the element's children.
-			 */
-			_focusHandler: function (event) {
-				this.$.input.focus();
-				var valLength = 0;
-				/*just in case value is null*/
-				if (this.$.input.value) {
-					valLength = this.$.input.value.length;
-				}
-				this.$.input.setSelectionRange(valLength, valLength);
-				this.open();
-			},
-			
-			/**
-			 * Captures the blur event on any of the element's children.
-			 */
-			_blurHandler: function() {
-				this.close();
 			},
 			
 			// UI-related functions

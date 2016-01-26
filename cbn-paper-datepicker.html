@@ -41,6 +41,7 @@ style this element.
 							format$="[[format]]" value-format$="[[valueFormat]]"
 							min-date$="[[minDate]]" max-date$="[[maxDate]]"
 							position$="[[position]]" position-reference="{{_self}}"
+							focusable-ancestor="cbn-paper-datepicker"
 							validation="[[validation]]" validation-order="[[validationOrder]]" 
 							validation-type="[[validationType]]" default-validation-message="[[defaultValidationMessage]]"
 				></cbn-datepicker>
@@ -118,13 +119,8 @@ style this element.
 			_self: {
 				type: Object,
 				value: function() { return this; }
-			},
-			_boundOnFocus: {
-				type: Function,
-				value: function() {
-					return this._onFocus.bind(this);
-				}
 			}
+			
 		},
 		
 		behaviors: [
@@ -165,30 +161,8 @@ style this element.
 					invalid: this.invalid
 				});
 			}
-		},
-		hostAttributes: {
-			/*to prevent focus via tab*/
-			tabindex: -1
-		},
-		
-		
-		attached: function () {
-			/*this is to prevent double fire of focus event*/
-			this.$.container.removeEventListener('focus', this.$.container._boundOnFocus, true);
-			this.$.container.removeEventListener('blur', this.$.container._boundOnBlur, true);
-			/*this is to move the focus from cbn-paper-datepicker to the input*/
-			this.addEventListener('focus', this._boundOnFocus);
-		},
-		/**
-		 * Callback when an element instance is attached to the DOM. Used to clean up event handlers.
-		 */
-		detached: function() {
-			this.removeEventListener('focus', this._boundOnFocus);
-		},
-		_onFocus: function (event) {
-			/*this is to move the focus from cbn-paper-datepicker to the input*/
-			this.$.input._focusHandler(event);
 		}
+		
 	});
 	
 	CbnForm.registerElement('cbn-paper-datepicker', {
