@@ -343,14 +343,14 @@
 					return;
 				
 				// if the user clicked a day from another month, navigate to the new month
-				if (this.currentView == 'days' && clickedDate.month() != this._viewDate.month()) {
+				/*if (this.currentView == 'days' && clickedDate.month() != this._viewDate.month()) {
 					this._selectDate(clickedDate, { viewChanged: true });
 					
-				} else {
+				} else {*/
 					this._viewDate = clickedDate;
 					// try to navigate down
 					this._navigateDown();
-				}
+				/*}*/
 			},
 			
 			/**
