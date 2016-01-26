@@ -9,7 +9,8 @@
         "test",
         "demo",
         "index.html",
-        "README.md"
+        "README.md",
+        "docs"
     ],
     "dependencies": {
         "polymer": "Polymer/polymer#^1.1",
