@@ -470,8 +470,8 @@
 			 * Used when the current view is 'days'.
 			 */
 			_renderDays: function () {
-				var start = this._viewDate.clone().startOf('month').day(0);
-				var end = this._viewDate.clone().endOf('month').day(6);
+				var start = this._viewDate.clone().startOf('month').startOf("week");
+				var end = this._viewDate.clone().endOf('month').endOf("week");
 				
 				var month = this._viewDate.month();
 				
@@ -513,8 +513,8 @@
 			 * Used when the current view is 'days'.
 			 */
 			_getWeekDays: function () {
-				var start = moment().day(0),
-					end = moment().day(6),
+				var start = moment().startOf("week"),
+					end = moment().endOf("week"),
 					days = [];
 				moment()
 					.range(start, end)
