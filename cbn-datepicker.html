@@ -217,7 +217,7 @@ Usage:
 			 * Overrides the `CbnForm.Validatable`'s `validate()` method to validate the input value.
 			 */
 			validate: function() {
-				var result = false;
+				var result = true;
 				if (this._inputValue) {
 					result = this._validateDate(this._inputValue);
 				}
