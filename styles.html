@@ -4,16 +4,8 @@
 <dom-module id="cbn-datepicker-styles-private"><template><style>
 	:host {
 		display: block;
+		position: relative;
 		margin: 0;
-		position: relative;
-	}
-	
-	.field {
-		position: relative;
-	}
-	
-	#container {
-		outline: none;
 	}
 	
 	#input {
@@ -50,10 +42,6 @@
 		display: block;
 	}
 	
-	.hidden {
-		display: none;
-	}
-	
 </style></template></dom-module>
 
 <dom-module id="cbn-datepicker-calendar-styles"><template><style>
@@ -84,9 +72,15 @@
 		color: #4285f4;
 		fill: #4285f4;
 	}
+	.header.hidden {
+		display: none;
+	}
 	
 	#buttons {
 		@apply(--layout-horizontal);
+	}
+	#buttons.hidden {
+		display: none;
 	}
 	#buttons .separator {
 		@apply(--layout-flex);
@@ -141,17 +135,96 @@
 		line-height: 4em;
 	}
 	
+	#content .item.selected-exact,
+	#content .item.fade.selected-exact {
+		color: #222;
+		font-weight: bold;
+		background-color: #b9b9b9;
+	}
+	#content .item.selected-range-left {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+	#content .item.selected-range-right {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	
 	#content .item.selected,
 	#content .item.fade.selected {
+		background-color: #DEDEDE;
 		color: #222;
-		background-color: #c9c9c9;
+		border-radius: 0;
 	}
 	
 	paper-icon-button.icon {
 		margin: 0;
 	}
 	
-	.hidden {
+</style></template></dom-module>
+
+<dom-module id="cbn-date-range-styles"><template><style>
+	:host {
+		display: block;
+		position: relative;
+		margin: 0;
+	}
+	
+	.inputs {
+		@apply(--layout-horizontal);
+	}
+	
+	.input {
+		@apply(--layout-flex);
+		width: auto;
+		display: block;
+	}
+	:host(.paper-input-input) .input {
+		position: relative;
+		outline: none;
+		box-shadow: none;
+		padding: 0;
+		border: none;
+		-webkit-appearance: none;
+		text-align: inherit;
+		
+		@apply(--paper-font-subhead);
+		@apply(--paper-input-container-input);
+	}
+	
+	.separator {
+		padding: 0 0.3em;
+	}
+	
+	#calendars {
+		@apply(--layout-horizontal);
+		background-color: white;
+		border-radius: 6px;
+		padding: 5px;
+		position: fixed;
+		z-index: 9999;
+		
+		@apply(--shadow-elevation-2dp);
+	}
+	
+	#calendars cbn-datepicker-calendar {
+		margin-right: 1em;
+	}
+	#calendars cbn-datepicker-calendar:last-of-type {
+		margin-right: 0;
+	}
+	
+	#buttons {
+		@apply(--layout-horizontal);
+	}
+	#buttons.hidden {
+		display: none;
+	}
+	#buttons .separator {
+		@apply(--layout-flex);
+	}
+	
+	#picker.hidden {
 		display: none;
 	}
 	

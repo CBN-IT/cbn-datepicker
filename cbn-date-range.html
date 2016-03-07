@@ -1,0 +1,529 @@
+<!--
+`<cbn-datepicker>` is a date input that shows a calendar for picking up the value.
+
+Usage:
+    <cbn-datepicker name="year2k" value="01.01.2000" minDate="-1m" maxDate="+3y"></cbn-datepicker>
+
+-->
+<!--suppress JSUnusedGlobalSymbols -->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cbn-form/lib/include.html">
+<link rel="import" href="../cbn-polymer-extensions/lib/position-behavior.html">
+<link rel="import" href="../cbn-polymer-extensions/lib/focusable-behavior.html">
+<link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
+
+<link rel="import" href="lib/utils.html">
+<link rel="import" href="lib/date-input-behavior.html">
+<link rel="import" href="cbn-datepicker-calendar.html">
+<link rel="import" href="styles.html">
+
+<dom-module id="cbn-date-range">
+	<template>
+		<style include="cbn-date-range-styles"></style>
+		
+		<div id="container" tabindex="-1">
+			
+			<div class="inputs" id="inputsContainer">
+				<input id="dateRangeInput" class="input start-input" placeholder$="[[placeholder]]" title="[[title]]" 
+					   on-focus="open" on-tap="open" autocomplete="off"
+					   on-keypress="_inputKeyPress" on-input="_displayValueChanged"
+					   value="[[_displayValue]]" />
+			</div>
+			
+			<div id="picker" class$="[[_computePickerClasses(_open)]]">
+				<div id="calendars">
+					<template is="dom-repeat" items="{{_calendars}}" as="cal">
+						<cbn-datepicker-calendar id="start_calendar" value="[[_calendarDate]]" is-range hide-button-bar
+												 format="moment" min-date="[[minDate]]" max-date="[[maxDate]]"
+												 years-range-count="[[yearsRangeCount]]"
+												 on-cbn-form-register="_stopInnerEventPropagation"
+												 on-value-changed="_calendarDateChanged"
+												 current-view="{{cal.currentView}}" view-date="{{cal.viewDate}}"
+						></cbn-datepicker-calendar>
+					</template>
+				</div>
+				
+				<div id="buttons">
+					<paper-icon-button class="icon" style="color: #4285f4;" icon="today"
+									   on-tap="setToday" tabindex="-1">Today
+					</paper-icon-button>
+					<span class="separator"></span>
+					<paper-icon-button class="icon" style="color: red" icon="clear"
+									   on-tap="clear" tabindex="-1">Clear
+					</paper-icon-button>
+				</div>
+			</div>
+		</div>
+		
+	</template>
+</dom-module>
+
+<script>
+	(function(scope) {
+		//noinspection JSUnusedGlobalSymbols
+		Polymer({
+			is: 'cbn-date-range',
+			
+			properties: {
+				
+				/**
+				 * The date range's resulting input value.
+				 * It contains always a correct date or a null / empty value otherwise.
+				 */
+				value: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * Always enable date range values for this input.
+				 */
+				isRange: {
+					type: Boolean,
+					readOnly: true,
+					value: true
+				},
+				
+				/**
+				 * The separator displayed between the inputs (note: this may be different from the value separator).
+				 */
+				separatorText: {
+					type: String,
+					value: ' - '
+				},
+				
+				/**
+				 * The regex pattern to use for splitting the user-entered text representing the date range.
+				 */
+				separatorPattern: {
+					type: String,
+					value: '\\s*-\\s*'
+				},
+				
+				/**
+				 * A placeholder to show when the value is empty.
+				 */
+				placeholder: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * The number of calendars to display.
+				 * 
+				 * Each calendar will be display a different month, starting from the starting date .
+				 */
+				numCalendars: {
+					type: Number,
+					value: 2,
+					observer: '_numCalendarsChanged'
+				},
+				
+				/**
+				 * If set, will start showing the dates from the right-most calendar towards the 
+				 * first (i.e. the reverse of the default behavior).
+				 */
+				rightAlignCalendars: {
+					type: Boolean,
+					value: false
+				},
+				
+				/**
+				 * Specifies the maximum number of years to display in the calendar 'years range' view.
+				 * Zero means show all years if min / max date is bounded, else defaults to 25 years.
+				 */
+				yearsRangeCount: {
+					type: Number,
+					value: 0
+				},
+				
+				/**
+				 * The position to show the calendar / picker.
+				 *
+				 * See `PositionBehavior` for mode details.
+				 */
+				position: {
+					type: String,
+					value: "left bottom",
+					observer: '_updatePosition'
+				},
+				
+				/**
+				 * This input has a special value (sometimes an array), so use a specific validation type.
+				 */
+				validationType: {
+					type: String,
+					value: 'date-range'
+				},
+				
+				// Private properties:
+				
+				/**
+				 * Whether the picker with the calendars is currently open.
+				 */
+				_open: { type: Boolean, value: false },
+				
+				/**
+				 * The value of the date range text input.
+				 */
+				_displayValue: { type: String, value: '' },
+				
+				/**
+				 * The date range selected inside the calendars (common between all of them).
+				 */
+				_calendarDate: { type: Object, value: null },
+				
+				/**
+				 * Stores the calendars shown inside the picker.
+				 */
+				_calendars: { type: Array },
+				
+				/**
+				 * The element that should retain the focus.
+				 */
+				focusTarget: {
+					type: Object,
+					value: function() { //noinspection JSUnresolvedVariable
+						return ( this.$ && this.$.dateRangeInput ? this.$.dateRangeInput : this ); }
+				}
+				
+			},
+			
+			behaviors: [
+				scope.DatePicker.DateInputBehavior,
+				CbnForm.Validatable,
+				CbnForm.DynamicElement,
+				Cbn.PositionBehavior,
+				Cbn.FocusableBehavior
+			],
+			
+			observers: [
+				'_displayDates(_date, format, separatorText)'
+			],
+			
+			listeners: {
+				'focus-in': 'open',
+				'focus-out': '_focusOut'
+			},
+			
+			/**
+			 * Element's dynamically-configurable attributes.
+			 * @type {Object}
+			 */
+			dynamicAttributes: {
+				position: true,
+				placeholder: true
+			},
+			
+			// API methods:
+			
+			/**
+			 * Overrides the `CbnForm.Validatable`'s `validate()` method to validate the input value.
+			 */
+			validate: function() {
+				var result = true;
+				if (this._displayValue) {
+					result = !!this._parseTextRange(/**@type {String}*/this._displayValue);
+				}
+				if (!result) {
+					this.fire('cbn-form-validate', { result: result });
+					return result;
+				}
+				return CbnForm.Validatable.validate.call(this);
+			},
+			
+			/**
+			 * Changes the currently selected date.
+			 * Accepts both Strings and Moment / Date objects.
+			 * 
+			 * @param {String|Date|Moment|null} [startDate] The start date to set.
+			 * @param {String|Date|Moment|null} [endDate] The date to set.
+			 */
+			setDateRange: function(startDate, endDate) {
+				this._setDate([startDate, endDate]);
+			},
+			
+			/**
+			 * Sets the date to today.
+			 */
+			setToday: function() {
+				this.setDateRange(moment(), moment());
+				this.close();
+			},
+			
+			/**
+			 * Clears the selected date.
+			 */
+			clear: function() {
+				this.setDateRange(null, null);
+				this.close();
+			},
+			
+			/**
+			 * Opens up the calendar.
+			 */
+			open: function() {
+				if (this._open) return;
+				
+				if (this._date && this._date[0] && this._date[1]) {
+					this._setCalendarDateRange(this._date);
+				}
+				this._open = true;
+				this._updatePosition();
+			},
+			
+			/**
+			 * Hides the calendar.
+			 */
+			close: function() {
+				this._open = false;
+			},
+			
+			/**
+			 * When the element uses focus, close the picker and validate it.
+			 */
+			_focusOut: function() {
+				var parsedRange = this._parseTextRange(this._displayValue);
+				if (!this._displayValue || parsedRange) {
+					this._setDate(parsedRange);
+					this._displayDates();
+				} else {
+					this._setInternalValidationState(true);
+				}
+				this.close();
+			},
+			
+				
+			// Calendar integration:
+			
+			/**
+			 * Sets the calendar date to the specified moment object.
+			 * 
+			 * @param {[moment, moment]} dates The date range to set.
+			 */
+			_setCalendarDateRange: function(dates) {
+				var i, nextDate, endMonthPassed;
+				
+				this._settingCalendarDate = true;
+				try {
+					this._calendarDate = dates;
+					
+					if (dates[0] && dates[1]) {
+						nextDate = dates[0] || moment();
+						nextDate = nextDate.clone();
+						endMonthPassed = false;
+						for (i=0; i<this.numCalendars; i++) {
+							if (dates[1] && nextDate.isSame(dates[1], 'month')) {
+								// we displayed the end month already
+								endMonthPassed = true;
+							}
+							if (i == (this.numCalendars - 1) && dates[1] && !endMonthPassed) {
+								nextDate = dates[1].clone();
+							}
+							this.set('_calendars.' + i + '.viewDate', nextDate);
+							this.set('_calendars.' + i + '.currentView', 'days');
+							
+							nextDate = nextDate.clone();
+							nextDate.add(1, 'month');
+						}
+					}
+					
+				} finally {
+					this._settingCalendarDate = false;
+				}
+			},
+			
+			/**
+			 * Called when the user picks a new date inside the calendar.
+			 */
+			_calendarDateChanged: function(event) {
+				event.stopPropagation();
+				
+				if (this._settingCalendarDate) return;
+				this._setDate(event.detail.value);
+				
+				// [commented] only close if the calendar view hasn't changed while selecting the date
+				// if (!event.detail.viewChanged)
+				// only close after both ends are chosen
+				if (this._date[0] && this._date[1])
+					this.close();
+			},
+			
+			
+			// Date <-> displayed input text conversion:
+			
+			/**
+			 * Updates the user-displayed input values to reflect the current `_date` range.
+			 */
+			_displayDates: function() {
+				// changed the date displayed inside the calendar
+				this._setCalendarDateRange(this._date);
+				
+				if (this._noDisplayedValueReformatting)
+					return;
+				this._displayValue = this._formatDisplayedValue(this._date);
+			},
+			
+			/**
+			 * Formats the displayed date.
+			 * @param {[moment|null]} dates The date range to display.
+			 * @return {String} The formatted date.
+			 */
+			_formatDisplayedValue: function(dates) {
+				if (!dates[0]) {
+					return '';
+				}
+				
+				var startText = (dates[0] ? dates[0].format(this.format) : '');
+				var endText = (dates[1] ? dates[1].format(this.format) : '');
+				return startText + this.separatorText + endText;
+			},
+			
+			/**
+			 * Called when the user changes the displayed input.
+			 * 
+			 * If the text entered is parse-able as date, changes the currently selected date.
+			 * If empty, it resets the date (i.e. sets it to null).
+			 */
+			_displayValueChanged: function(event) {
+				var input = event.currentTarget;
+				// backup the input's selection
+				var start = input.selectionStart,
+					end = input.selectionEnd;
+				
+				var displayValue = input.value;
+				this._displayValue = input.value;
+				
+				var parsedRange = this._parseTextRange(displayValue);
+				if (parsedRange) {
+					this._noDisplayedValueReformatting = true;
+					try {
+						this._setDate(parsedRange);
+					} finally {
+						this._noDisplayedValueReformatting = false;
+					}
+				}
+					
+				// restore the selection
+				input.setSelectionRange(start, end);
+			},
+			
+			/**
+			 * Parses / validates a user-entered date range (as text).
+			 * 
+			 * If empty input is given, returns an array of two empty strings.
+			 * 
+			 * @param {String} text The user-entered text to parse.
+			 * @return {Array|null} An array of split text or null if unparseable.
+			 */
+			_parseTextRange: function(text) {
+				if (!text) {
+					return ['', '']; // empty input
+				}
+				var pattern = this.separatorPattern;
+				if (!(pattern instanceof RegExp)) {
+					pattern = new RegExp(pattern);
+				}
+				var arr = text.split(pattern);
+				if (arr.length == 2) {
+					if (this._validateDate(arr[0]) && this._validateDate(arr[1])) {
+						return arr;
+					}
+				}
+				return null;
+			},
+			
+			/**
+			 * Captures the input key events to listen for special keys.
+			 *
+			 * @param event The key event.
+			 */
+			_inputKeyPress: function(event) {
+				if (event.charCode == 13) { // Enter
+					this._setDate(this._parseTextRange(this._displayValue));
+					this._displayDates();
+					event.preventDefault();
+				}
+			},
+			
+			// Misc. event handlers / observers:
+			
+			_numCalendarsChanged: function() {
+				var calendarDescriptors = [];
+				var curMonth = moment();
+				for (var i=0; i<this.numCalendars; i++) {
+					calendarDescriptors.push({
+						identifier: i,
+						currentView: 'days',
+						viewDate: curMonth
+					});
+					// next calendar will show the next month, by default
+					curMonth = curMonth.clone().add(1, 'month');
+				}
+				this._calendars = calendarDescriptors;
+			},
+			
+			// UI-related functions
+			
+			/**
+			 * Updates the calendar's position.
+			 *
+			 * Called automatically when the date picker opens.
+			 */
+			_updatePosition: function() {
+				if (!this._open)
+					return;
+				
+				// wait for CSS to get processed
+				this.async(function() {
+					//noinspection JSUnresolvedVariable
+					this.updateElementPosition(this.$.picker);
+				});
+			},
+			
+			/**
+			 * Computes the #picker component's class list.
+			 *
+			 * @param open Whether the calendar is open.
+			 * @return {String} The calendar container's classes.
+			 */
+			_computePickerClasses: function(open) {
+				return (open ? '' : ' hidden' );
+			}
+			
+		});
+		
+		// Date range validators
+		
+		/**
+		 * Validates whether a date range value is not empty.
+		 *
+		 * @param {Boolean} settings
+		 */
+		CbnForm.Validator.register({
+			name: 'required',
+			types: ['date-range'],
+			message: 'This field is mandatory!',
+			validate: function(value, settings, input, stop) {
+				settings = Validator.normalizeSettings(settings);
+				var valueIsArray = input._normRangeFormat && input._normRangeFormat.type == 'array';
+				function isValueEmpty(value) {
+					return (valueIsArray ? !(value && value[0]) : !!value );
+				}
+				
+				var required = settings.validate;
+				if (required) // if required=true, validate the input
+					return !isValueEmpty(value);
+				
+				if (!required && isValueEmpty(value)) // stop the rest of the validation if the value is not specified
+					stop();
+				return true;
+			}
+		});
+		
+		CbnForm.registerElement('cbn-date-range', {
+			types: ['date-range']
+		});
+		
+	})(window.Cbn);
+</script>

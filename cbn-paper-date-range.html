@@ -1,10 +1,10 @@
 <!--
-`<cbn-paper-select>` is a paper-styled variant of `<cbn-select>`.
+`<cbn-paper-date-range>` is a paper-styled variant of `<cbn-date-range>`.
 
 Usage:
-    <cbn-paper-select label="Select label"></cbn-paper-select>
+    <cbn-paper-date-range label="Date Range" value='[ "today", "+1 month" ]'><cbn-paper-date-range>
 
-See `Polymer.PaperInputBehavior` and `<cbn-select>` for API docs.
+See `Polymer.PaperInputBehavior` and `<cbn-date-range>` for API docs.
 
 ### Styling
 
@@ -17,9 +17,9 @@ style this element.
 <link rel="import" href="../paper-input/paper-input-behavior.html">
 <link rel="import" href="../paper-input/paper-input-container.html">
 <link rel="import" href="../paper-input/paper-input-error.html">
-<link rel="import" href="cbn-datepicker.html">
+<link rel="import" href="cbn-date-range.html">
 
-<dom-module id="cbn-paper-datepicker">
+<dom-module id="cbn-paper-date-range">
 	<template>
 		<style>
 			:host {
@@ -33,18 +33,18 @@ style this element.
 			
 			<label hidden$="[[!label]]">[[label]]</label>
 			
-			<cbn-datepicker name$="[[name]]" id="input" class="paper-input-input"
+			<cbn-date-range name$="[[name]]" id="input" class="paper-input-input"
 							value="{{value}}" default-value="[[defaultValue]]"
 							autocomplete="[[autocomplete]]" autofocus="[[autofocus]]" size="[[size]]"
 							disabled="[[disabled]]" inputmode="[[inputmode]]" readonly="[[readonly]]"
 							placeholder$="[[placeholder]]"
-							format$="[[format]]" value-format$="[[valueFormat]]"
+							format$="[[format]]" value-format$="[[valueFormat]]" range-format$="[[rangeFormat]]"
 							min-date$="[[minDate]]" max-date$="[[maxDate]]"
 							position$="[[position]]" position-reference="{{_self}}"
-							focusable-ancestor="cbn-paper-datepicker"
+							focusable-ancestor="cbn-paper-date-range"
 							validation="[[validation]]" validation-order="[[validationOrder]]" 
 							validation-type="[[validationType]]" default-validation-message="[[defaultValidationMessage]]"
-				></cbn-datepicker>
+				></cbn-date-range>
 			
 			<template is="dom-if" if="[[errorMessage]]">
 				<paper-input-error>[[errorMessage]]</paper-input-error>
@@ -57,7 +57,7 @@ style this element.
 
 <script>
 	Polymer({
-		is: 'cbn-paper-datepicker',
+		is: 'cbn-paper-date-range',
 		
 		properties: {
 			
@@ -89,6 +89,32 @@ style this element.
 			},
 			
 			/**
+			 * An object that describes the layout of the element's date range value.
+			 * Only used if `isRange` is true (supersedes the `valueFormat` property in this case).
+			 *
+			 * Accepts either a simple string naming the format to use or an object (if a specific type expects 
+			 * more parameters).
+			 *
+			 * Available formats:
+			 * - 'array': the two dates (start, end) are set as an array of length 2; the first item will always be
+			 *   the lesser date;
+			 * - 'separated': as String, separated using the `separatorText` value (defaults to ' - ');
+			 * - 'moment-range': outputs a Moment Range object;
+			 *
+			 * The date format can either be specified through `rangeFormat.format` or via the `format` / 
+			 * `valueFormat` element properties.
+			 *
+			 * Examples:
+			 * - `"array"` - makes it an array, formatted using the `valueFormat` / `format` properties.
+			 * - `{ "type": "array", "format": "YYYY-MM-DD" }` - an array with `[ startDate, endDate ]`;
+			 * - `{ "type": "separated", "separator": " - " }` - separated by ' - ';
+			 */
+			rangeFormat: {
+				type: Object,
+				value: 'array'
+			},
+			
+			/**
 			 * Set to disable automatic value reformatting.
 			 */
 			noReformatting: {
@@ -115,12 +141,11 @@ style this element.
 			},
 			
 			/**
-			 * Specifies the maximum number of years to display in the calendar 'years range' view.
-			 * Zero means show all years if min / max date is bounded, else defaults to 25 years.
+			 * The separator displayed between the inputs (note: this may be different from the value separator).
 			 */
-			yearsRangeCount: {
-				type: Number,
-				value: 0
+			separatorText: {
+				type: String,
+				value: ' - '
 			},
 			
 			/**
@@ -132,7 +157,6 @@ style this element.
 				type: String,
 				value: "left bottom"
 			},
-			
 			
 			_ariaLabelledBy: {
 				type: String
@@ -160,9 +184,9 @@ style this element.
 		 * @type {Object}
 		 */
 		dynamicAttributes: {
-			rangeFormat: { type: 'property' },
 			format: { type: 'property' },
 			valueFormat: { type: 'property' },
+			rangeFormat: { type: 'property' },
 			minDate: { type: 'property' },
 			maxDate: { type: 'property' },
 			position: { type: 'property' },
@@ -179,7 +203,7 @@ style this element.
 				if (input._displayValue) {
 					this._inputHasContent = true;
 				} else {
-					this._inputHasContent = !!(value);
+					this._inputHasContent = !!(value && value[0]);
 				}
 				
 				this.updateAddons({
@@ -192,8 +216,8 @@ style this element.
 		
 	});
 	
-	CbnForm.registerElement('cbn-paper-datepicker', {
-		types: ['date'],
+	CbnForm.registerElement('cbn-paper-date-range', {
+		types: ['date-range'],
 		priority: 3
 	});
 	

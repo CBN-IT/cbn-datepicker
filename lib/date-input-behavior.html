@@ -1,0 +1,430 @@
+<!--suppress JSUnusedGlobalSymbols -->
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../cbn-form/lib/include.html">
+<link rel="import" href="utils.html">
+
+<script>
+	(function (scope, utils) {
+		scope = window.Cbn = window.Cbn || {};
+		scope.DatePicker = scope.DatePicker || {};
+		utils = scope.DatePicker.Utils;
+		
+		/**
+		 * A behavior that implements the date value model (for both single value and date ranges).
+		 * 
+		 * It defines a set of date / formatting-related properties.
+		 * 
+		 * It defines a set of date / formatting-related properties and implements a `value` to internal `_date` 
+		 * conversion logic:
+		 * 
+		 * - if the value is changed, the internal `_date` property is set to the parsed moment object / array 
+		 *   representing the value;
+		 * - if the element calls `_setDate` to set the internal `_date`, the model `value` is also updated to the 
+		 *   formatted `_date` value;
+		 * - whenever the value / formatting properties are changed, the date will get reformatted (if enabled) 
+		 *   if the string representation differs between the old and the new values.
+		 * 
+		 * Thus, the element needs only to work with the internal `_date` object, which is always a valid moment object 
+		 * (or null, if a valid date is not selected).
+		 * Warning: DO NOT change the `_date` property directly. Use `_setDate` method instead if you want to change 
+		 * the input's value!
+		 * 
+		 * Internal `_date` modifications should be handled via observers.
+		 * If the input value is changed indirectly, the `` is present while the `_date` notification events are fired.
+		 * For the other way around, you can specify an indirect parameter to the `_setDate` method in order to set the 
+		 * 'indirect' flag to the value change notification.
+		 * 
+		 * @polymerBehavior
+		 */
+		scope.DatePicker.DateInputBehaviorImpl = {
+			
+			properties: {
+				
+				/**
+				 * The currently selected date.
+				 *
+				 * Uses the format specified by the `valueFormat` property (or the `rangeFormat`, if `isRange` is set).
+				 */
+				value: {
+					type: Object,
+					value: '',
+					notify: false, // manual bubbling notification
+					observer: '_valueChanged'
+				},
+				
+				/**
+				 * If set, it will allow the user to pick a date range.
+				 * 
+				 * The value will be formatted using the `rangeFormat` property.
+				 */
+				isRange: {
+					type: Boolean,
+					value: false,
+					observer: '_isRangeToggled'
+				},
+				
+				/**
+				 * The format in which the input's `value` will be encoded.
+				 * If this is a date range input, this property will serve as default value for `rangeFormat.format`.
+				 *
+				 * If unspecified, the `format` value will be used instead.
+				 *
+				 * Accepts all valid moment formats: http://momentjs.com/docs/#/parsing/string-format/, plus the 
+				 * following special keywords:
+				 * 
+				 * - 'moment': the value will be an unformatted Moment object.
+				 */
+				valueFormat: {
+					type: String,
+					value: 'YYYY-MM-DD'
+				},
+				
+				/**
+				 * The format to use for displaying the date to the user.
+				 * Uses Moment.js formatting (see `valueFormat`).
+				 * 
+				 * If unspecified, the `valueFormat` will be used instead (if it is a string format).
+				 */
+				format: {
+					type: String,
+					value: 'DD.MM.YYYY'
+				},
+				
+				/**
+				 * An object that describes the layout of the element's date range value.
+				 * Only used if `isRange` is true (supersedes the `valueFormat` property in this case).
+				 *
+				 * Accepts either a simple string naming the format to use or an object (if a specific type expects 
+				 * more parameters).
+				 *
+				 * Available formats:
+				 * - 'array': the two dates (start, end) are set as an array of length 2; the first item will always be
+				 *   the lesser date;
+				 * - 'separated': as String, separated using the `separatorText` value (defaults to ' - ');
+				 * - 'moment-range': outputs a Moment Range object;
+				 *
+				 * The date format can either be specified through `rangeFormat.format` or via the `format` / 
+				 * `valueFormat` element properties.
+				 *
+				 * Examples:
+				 * - `"array"` - makes it an array, formatted using the `valueFormat` / `format` properties.
+				 * - `{ "type": "array", "format": "YYYY-MM-DD" }` - an array with `[ startDate, endDate ]`;
+				 * - `{ "type": "separated", "separator": " - " }` - separated by ' - ';
+				 */
+				rangeFormat: {
+					type: Object,
+					value: 'array'
+				},
+				
+				/**
+				 * Set to disable automatic value reformatting.
+				 */
+				noReformatting: {
+					type: Boolean,
+					value: false
+				},
+				
+				/**
+				 * Specifies the minimal value of the calendar's date interval.
+				 * Uses Moment.js formatting (see `valueFormat`).
+				 */
+				minDate: {
+					type: String,
+					value: '-10y',
+					observer: '_minDateChanged'
+				},
+				
+				/**
+				 * Specifies the maximal value of the calendar's date interval.
+				 * Uses Moment.js formatting (see `valueFormat`).
+				 */
+				maxDate: {
+					type: String,
+					value: '+10y',
+					observer: '_maxDateChanged'
+				},
+				
+				// Protected / internal properties
+				
+				/**
+				 * Stores the currently selected date as a moment object (or as an array of two moment objects, 
+				 * if `isRange` is true).
+				 */
+				_date: { type: Object },
+				
+				/**
+				 * Stores the parsed `minDate` (as a moment object or null if not set).
+				 */
+				_minDate: { type: Object },
+				
+				/**
+				 * Stores the parsed `maxDate` (as a moment object or null if not set).
+				 */
+				_maxDate: { type: Object }
+				
+			},
+			
+			observers: [
+				'_formattingChanged(value, format, valueFormat, rangeFormat)'
+			],
+			
+			/**
+			 * Date value-related dynamically-configurable attributes.
+			 * @type {Object}
+			 */
+			dynamicAttributes: {
+				valueFormat: true,
+				format: true,
+				rangeFormat: true,
+				minDate: true,
+				maxDate: true
+			},
+			
+			/**
+			 * Computes the moment format strings to use for parsing.
+			 * @return {[String]}
+			 */
+			get _parseFormats() {
+				var parseFormats = [];
+				if (this.isRange) {
+					if (typeof this.rangeFormat == 'object' && this.rangeFormat.format) {
+						parseFormats.push(this.rangeFormat.format);
+					}
+				}
+				if (this.valueFormat)
+					parseFormats.push(this.valueFormat);
+				if (this.format)
+					parseFormats.push(this.format);
+				
+				return parseFormats;
+			},
+			
+			/**
+			 * Returns the normalized range formatting object. Only for elements with `isRange` == true.
+			 * 
+			 * @return {DateRangeFormat|null}
+			 */
+			get _normRangeFormat() {
+				if (!this.isRange)
+					return null;
+				return utils.normalDateRangeFormat(this.rangeFormat, this._parseFormats,
+					this._minDate, this._maxDate);
+			},
+			
+			/**
+			 * Will be true while the internal `_date` is being set.
+			 */
+			_settingDate: false,
+			
+			/**
+			 * Set to true to force the setting of the value at the next reformatting observer notification.
+			 */
+			_mustSetValue: false,
+			
+			/**
+			 * Whether to set the value indirectly at the next reformatting event.
+			 */
+			_mustSetIndirect: null,
+			
+			// Protected API
+			
+			/**
+			 * Changes the input's value.
+			 * 
+			 * This method is preferred over changing the input's `value` property for avoiding the non-initialized
+			 * element state.
+			 * 
+			 * The date parameter can either be a moment object / array (for Date Range inputs) or an encoded string / 
+			 * object (using the `valueFormat` / `rangeFormat` formats).
+			 * 
+			 * @param {String|Date|Moment|null|Array} date The date / range to set.
+			 * @param {Boolean|Object} [indirect] Whether to emit an indirect value change notification.
+			 */
+			_setDate: function(date, indirect) {
+				var parsedDate = this._parseDate(date);
+				// do not change it if the resulting (parsed) date is the same
+				// (makes date setting idempotent with no extraneous notifications)
+				if (this.isRange) {
+					if (utils.compareFormattedDateRanges(parsedDate, this._date)) {
+						return;
+					}
+				} else {
+					if (parsedDate && parsedDate.isSame(this._date, 'day')) {
+						return;
+					}
+				}
+				
+				try {
+					this._settingDate = true;
+					this._date = parsedDate;
+					
+					var formattedValue = this._formatDateValue(parsedDate);
+					if (formattedValue === undefined) {
+						this._mustSetValue = true;
+						return;
+					}
+					if (indirect !== undefined) {
+						this._setIndirectValue(formattedValue, indirect);
+					} else {
+						this._setValue(formattedValue);
+					}
+				} finally {
+					this._settingDate = false;
+				}
+			},
+			
+			/**
+			 * Parses a date / range using this instance's formatting attributes and returns the moment object (array).
+			 * 
+			 * @param {String|Date|Moment|null|Array} date The input date / range.
+			 * @param {Boolean} [single] If set and this is a ranged picker, will parse the date as standalone.
+			 * @return {moment|[moment, moment]|null} The parsed date / range as moment object(s). Null if invalid.
+			 */
+			_parseDate: function(date, single) {
+				var parsedDate = null;
+				if (this.isRange && !single) {
+					// parsedDate will be an array
+					parsedDate = utils.parseDateRange(date, this._normRangeFormat);
+				} else {
+					// parseDate is a single moment object
+					parsedDate = utils.parseDate(date, this._parseFormats);
+					parsedDate = utils.boundDate(parsedDate, this._minDate, this._maxDate);
+				}
+				return parsedDate;
+			},
+			
+			/**
+			 * Formats a moment date, returning its encoded representation (based on `valueFormat` / `rangeFormat`).
+			 * 
+			 * Note: returns `undefined` if the element hasn't been initialized yet!
+			 * 
+			 * @param {moment|Array}  date The date to format (a moment object / array).
+			 * @returns {moment|string|null} The formatted date.
+			 */
+			_formatDateValue: function(date) {
+				if (this.valueFormat === undefined || this.format === undefined 
+						|| this.rangeFormat === undefined) {
+					// element not yet initialized
+					return undefined;
+				}
+				if (this.isRange) {
+					return utils.formatDateRange(date, this._normRangeFormat);
+				} else {
+					return utils.formatDate(date, /**@type {String}*/(this.valueFormat ? this.valueFormat : this.format));
+				}
+			},
+			
+			/**
+			 * Override the FormElement's value observer to prevent firing multiple `value-changed` events.
+			 * We use our own model handling.
+			 */
+			_fe_valueChanged: function() {
+			},
+			
+			/**
+			 * Called when the input's value property is changed.
+			 */
+			_valueChanged: function() {
+				if (!this._settingDate) {
+					// parse the value and set the internal date object
+					this._setDate(this.value);
+				}
+				
+				if (this._inputValueIndirectlyChanged) {
+					// the `_setIndirectValue` input method will emit notifications
+				} else {
+					this.fire('value-changed', {
+						value: this.value
+					});
+				}
+			},
+			
+			/**
+			 * Called when the formats change to reformat the value.
+			 * 
+			 * Also used to set the initial value when the element is ready (i.e. the formatting properties become
+			 * 'defined').
+			 */
+			_formattingChanged: function() {
+				if ((!this['_noReformatting']) || this._mustSetValue) {
+					var formattedValue = this._formatDateValue(this._date);
+					var mustSet = this._mustSetValue;
+					var mustSetIndirect = this._mustSetIndirect;
+					this._mustSetValue = false;
+					this._mustSetIndirect = null;
+					
+					if (mustSet && mustSetIndirect !== null) {
+						this._setIndirectValue(formattedValue, mustSetIndirect);
+						
+					} else if (mustSet) {
+						this._setValue(formattedValue);
+						
+					} else {
+						// check if the value differs from the current one
+						var sameFormatAndValue;
+						if (this.isRange) {
+							sameFormatAndValue = utils.compareFormattedDateRanges(formattedValue, this.value);
+						} else {
+							sameFormatAndValue = utils.compareFormattedDates(formattedValue, this.value);
+						}
+						
+						if (!sameFormatAndValue) {
+							// set it indirectly with the `reformatted` flag
+							this._setIndirectValue(formattedValue, {
+								'reformatted': true
+							});
+						}
+					}
+				}
+			},
+			
+			/**
+			 * Validates the specified date string and returns true if parsable.
+			 *
+			 * @param {String} dateStr The date string to validate.
+			 * @returns {Boolean} Whether the string is valid.
+			 */
+			_validateDate: function(dateStr) {
+				if (!dateStr) return false;
+				var parsed = utils.parseDate(dateStr, [ this.valueFormat, this.format ]);
+				return (parsed && parsed.isValid());
+			},
+			
+			// Misc observers:
+			
+			/**
+			 * Called when the `minDate` attribute is changed.
+			 */
+			_minDateChanged: function () {
+				this._minDate = utils.parseDate(/**@type {String}*/this.minDate, [this.format, this.valueFormat]);
+			},
+			
+			/**
+			 * Called when the `maxDate` attribute is changed.
+			 */
+			_maxDateChanged: function () {
+				this._maxDate = utils.parseDate(/**@type {String}*/this.maxDate, [this.format, this.valueFormat]);
+			},
+			
+			/**
+			 * When the `range` attribute is changed, reset the date value.
+			 */
+			_isRangeToggled: function() {
+				this._setDate(null);
+			},
+			
+			
+			/**
+			 * Stops the propagation of inner cbn-select's events.
+			 */
+			_stopInnerEventPropagation: function(event) {
+				if (event.target != this)
+					event.stopPropagation();
+			}
+			
+		};
+		
+		scope.DatePicker.DateInputBehavior = [ CbnForm.InputElement , scope.DatePicker.DateInputBehaviorImpl];
+		
+	})();
+</script>

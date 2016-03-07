@@ -10,8 +10,8 @@
 	<link rel="import" href="../../iron-input/iron-input.html">
 	
 	<link rel="import" href="../../cbn-form/cbn-dynamic-form.html">
-	<link rel="import" href="../cbn-datepicker.html">
 	<link rel="import" href="../cbn-paper-datepicker.html">
+	<link rel="import" href="../cbn-paper-date-range.html">
 	
 </head>
 <body>
@@ -69,10 +69,19 @@
 			},
 			{
 				"name": "second",
-				"label": "Paper DatePicke (required)",
+				"label": "Paper DatePicker (required)",
 				"type": "date",
-				"element": "cbn-paper-datepicker",
 				"defaultValue": "+15d",
+				"validation": {
+					"required": true
+				},
+				"autoValidate": true
+			},
+			{
+				"name": "range1",
+				"label": "Paper Date Range (required)",
+				"type": "date-range",
+				"defaultValue": ["-30d", "-0d"],
 				"validation": {
 					"required": true
 				},
