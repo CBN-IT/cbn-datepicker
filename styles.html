@@ -47,7 +47,7 @@
 <dom-module id="cbn-datepicker-calendar-styles"><template><style>
 	
 	:host {
-		display: block;
+		@apply(--layout-vertical);
 		position: relative;
 		width: 224px;
 		margin: 0;
@@ -151,6 +151,10 @@
 		margin: 0;
 	}
 	
+	.flex {
+		@apply(--layout-flex);
+	}
+	
 </style></template></dom-module>
 
 <dom-module id="cbn-date-buttons-styles"><template><style>
@@ -179,7 +183,7 @@
 		color: #4285f4;
 	}
 	
-	#buttons paper-button.range-left, paper-button.range-right {
+	#buttons paper-button.range-left, #buttons paper-button.range-right {
 		padding: 0;
 		margin: 8px;
 		width: 24px;
@@ -190,9 +194,8 @@
 		text-align: center;
 		min-width: 0;
 		font-weight: bold;
-		background-color: #9CC2FF;
-		color: #fff;
-		/*background-color: #9CC2FF;*/
+		background-color: #b9b9b9;
+		color: #222;
 	}
 	#buttons paper-button.range-left {
 		border-top-right-radius: 0;
@@ -253,6 +256,7 @@
 	
 	#calendars {
 		@apply(--layout-horizontal);
+		align-content: space-between;
 	}
 	
 	#calendars cbn-datepicker-calendar {

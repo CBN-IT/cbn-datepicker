@@ -26,7 +26,7 @@
 						<template is="dom-if" if="[[_isButtonType(button, 'regular-icon')]]">
 							<iron-icon icon="[[button.icon]]"></iron-icon>
 						</template>
-						[[ button.label ]]</paper-button>
+						[[ _computeLabel(button.label, button, currentDate) ]]</paper-button>
 				</template>
 				
 				<template is="dom-if" if="[[_isButtonType(button, 'separator')]]">
@@ -59,18 +59,25 @@
 				label: 'Clear',
 				style: 'color: red;'
 			},
+			"currentDate": {
+				date: null,
+				special: 'current',
+				label: ' ',
+				dateLabel: 'D',
+				className: 'range-left'
+			},
 			"range-left": {
 				date: null,
 				special: 'range-left',
 				label: ' ',
-				icon: 'chevron-left',
+				rangeStartLabel: 'D',
 				className: 'range-left'
 			},
 			"range-right": {
 				date: null,
 				special: 'range-right',
 				label: ' ',
-				icon: 'chevron-right',
+				rangeEndLabel: 'D',
 				className: 'range-right'
 			},
 			"separator": {
@@ -109,13 +116,26 @@
 				 * - 'icon': the name of the icon (for defining an icon button);
 				 * - 'label': the label of the button (for defining a regular button);
 				 * - 'style': CSS text to apply to the button (string);
-				 * - 'date': the date / range to set when pressed (also accepts relative moment specifiers).
+				 * - 'date': the date / range to set when pressed (also accepts relative moment specifiers);
+				 * - 'dateLabel': use instead of the label to display the current date; accepts any moment format string;
+				 * - 'rangeStartLabel': same as 'dateLabel', but formats the range start value;
+				 * - 'rangeEndLabel': same as 'dateLabel', but formats the range end value;
 				 */
 				buttons: {
 					type: Array,
 					value: function() {
 						return [ 'today', 'separator', 'clear' ];
 					}
+				},
+				
+				/**
+				 * The currently selected date / range (a moment object / array).
+				 * 
+				 * Used for dynamic button labels (that display the current date as label).
+				 */
+				currentDate: {
+					type: Object,
+					value: null
 				},
 				
 				/**
@@ -187,6 +207,38 @@
 				if (type == 'regular-icon' && button.icon && button.label)
 					return true;
 				return !!(type == 'regular' && button.label);
+			},
+			
+			/**
+			 * Returns the label to display for the button.
+			 * 
+			 * @param {String} label The label text.
+			 * @param {Object} button The button template object.
+			 * @param {moment|null} currentDate The current date (for dynamic date labels).
+			 * @return {String} The text to display.
+			 */
+			_computeLabel: function(label, button, currentDate) {
+				var date = null;
+				if (button.dateLabel) {
+					date = ( currentDate && typeof currentDate == 'object' ?
+						currentDate : null );
+					if (date)
+						label = date.format(button.dateLabel);
+				}
+				if (button.rangeStartLabel) {
+					date = ( currentDate && Array.isArray(currentDate) ?
+						currentDate[0] : null );
+					if (date)
+						label = date.format(button.rangeStartLabel);
+				}
+				if (button.rangeEndLabel) {
+					date = ( currentDate && Array.isArray(currentDate) ?
+						currentDate[1] : null );
+					if (date)
+						label = date.format(button.rangeEndLabel);
+				}
+				
+				return label;
 			}
 			
 		});

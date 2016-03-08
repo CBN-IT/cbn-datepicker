@@ -41,6 +41,7 @@ Usage:
 												 on-value-changed="_calendarDateChanged"
 												 current-view="{{cal.currentView}}" view-date="{{cal.viewDate}}">
 							<cbn-date-buttons buttons='[ "today", "separator", "range-left", "range-right" ]'
+											  current-date="[[_date]]"
 											  on-date-button-clicked="_calendarButtonClicked"></cbn-date-buttons>
 						</cbn-datepicker-calendar>
 					</template>
