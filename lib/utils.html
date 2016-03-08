@@ -64,6 +64,9 @@
 										date.subtract(value, name);
 										break;
 									case '=':
+										if (name == 'days') {
+											name = 'date';
+										}
 										date.set(name, value);
 										break;
 								}

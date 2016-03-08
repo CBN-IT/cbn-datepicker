@@ -27,7 +27,7 @@
 		@apply(--paper-input-container-input);
 	}
 	
-	#calendar {
+	#picker {
 		display: none;
 		background-color: white;
 		border-radius: 6px;
@@ -38,7 +38,7 @@
 		@apply(--shadow-elevation-2dp);
 	}
 	
-	#calendar.open {
+	#picker.open {
 		display: block;
 	}
 	
@@ -74,16 +74,6 @@
 	}
 	.header.hidden {
 		display: none;
-	}
-	
-	#buttons {
-		@apply(--layout-horizontal);
-	}
-	#buttons.hidden {
-		display: none;
-	}
-	#buttons .separator {
-		@apply(--layout-flex);
 	}
 	
 	#content {
@@ -163,6 +153,58 @@
 	
 </style></template></dom-module>
 
+<dom-module id="cbn-date-buttons-styles"><template><style>
+	
+	:host {
+		display: block;
+	}
+	
+	:host #buttons {
+		@apply(--layout-horizontal);
+	}
+	:host([vertical]) #buttons {
+		@apply(--layout-vertical);
+	}
+	:host .separator {
+		@apply(--layout-flex);
+	}
+	
+	#buttons paper-button {
+		font-size: 0.75em;
+		line-height: 1.0em;
+		text-align: left;
+	}
+	#buttons paper-button.blue,
+	#buttons paper-icon-button.blue {
+		color: #4285f4;
+	}
+	
+	#buttons paper-button.range-left, paper-button.range-right {
+		padding: 0;
+		margin: 8px;
+		width: 24px;
+		height: 24px;
+		line-height: 24px;
+		font-size: 0.75em;
+		border-radius: 50%;
+		text-align: center;
+		min-width: 0;
+		font-weight: bold;
+		background-color: #9CC2FF;
+		color: #fff;
+		/*background-color: #9CC2FF;*/
+	}
+	#buttons paper-button.range-left {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+	#buttons paper-button.range-right {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	
+</style></template></dom-module>
+
 <dom-module id="cbn-date-range-styles"><template><style>
 	:host {
 		display: block;
@@ -196,8 +238,7 @@
 		padding: 0 0.3em;
 	}
 	
-	#calendars {
-		@apply(--layout-horizontal);
+	#picker {
 		background-color: white;
 		border-radius: 6px;
 		padding: 5px;
@@ -206,26 +247,19 @@
 		
 		@apply(--shadow-elevation-2dp);
 	}
+	#picker.hidden {
+		display: none;
+	}
+	
+	#calendars {
+		@apply(--layout-horizontal);
+	}
 	
 	#calendars cbn-datepicker-calendar {
 		margin-right: 1em;
 	}
 	#calendars cbn-datepicker-calendar:last-of-type {
 		margin-right: 0;
-	}
-	
-	#buttons {
-		@apply(--layout-horizontal);
-	}
-	#buttons.hidden {
-		display: none;
-	}
-	#buttons .separator {
-		@apply(--layout-flex);
-	}
-	
-	#picker.hidden {
-		display: none;
 	}
 	
 </style></template></dom-module>

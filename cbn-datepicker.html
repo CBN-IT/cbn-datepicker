@@ -15,6 +15,7 @@ Usage:
 <link rel="import" href="lib/utils.html">
 <link rel="import" href="lib/date-input-behavior.html">
 <link rel="import" href="cbn-datepicker-calendar.html">
+<link rel="import" href="cbn-date-buttons.html">
 <link rel="import" href="styles.html">
 
 <dom-module id="cbn-datepicker">
@@ -26,13 +27,17 @@ Usage:
 			   on-keypress="_inputKeyPress" on-input="_displayValueChanged"
 			   value="[[_displayValue]]" />
 		
-		<cbn-datepicker-calendar id="calendar" value="{{_calendarDate}}" value-format="moment"
-								 min-date="[[minDate]]" max-date="[[maxDate]]"
-								 years-range-count="[[yearsRangeCount]]"
-								 current-view="{{_calendarView}}"
-								 on-cbn-form-register="_stopInnerEventPropagation"
-								 on-value-changed="_stopInnerEventPropagation"
-								 class$="[[_computeCalendarClasses(_open)]]"></cbn-datepicker-calendar>
+		<div id="picker" class$="[[_computePickerClasses(_open)]]">
+			<cbn-datepicker-calendar id="calendar" value="{{_calendarDate}}" value-format="moment"
+									 min-date="[[minDate]]" max-date="[[maxDate]]"
+									 years-range-count="[[yearsRangeCount]]"
+									 current-view="{{_calendarView}}"
+									 on-cbn-form-register="_stopInnerEventPropagation"
+									 on-value-changed="_stopInnerEventPropagation"
+			></cbn-datepicker-calendar>
+			
+			<cbn-date-buttons id="buttons" on-date-button-clicked="_buttonClicked"></cbn-date-buttons>
+		</div>
 	
 	</template>
 </dom-module>
@@ -184,15 +189,6 @@ Usage:
 			},
 			
 			/**
-			 * Sets the date to today.
-			 */
-			setToday: function() {
-				this._calendarView = 'days';
-				this.setDate(moment());
-				this.close();
-			},
-			
-			/**
 			 * Clears the selected date.
 			 */
 			clear: function() {
@@ -334,6 +330,14 @@ Usage:
 			// UI-related functions
 			
 			/**
+			 * When a date button is clicked.
+			 */
+			_buttonClicked: function(event) {
+				this.setDate(event.detail.date);
+				this.close();
+			},
+			
+			/**
 			 * Updates the calendar's position.
 			 *
 			 * Called automatically when the date picker opens.
@@ -344,17 +348,17 @@ Usage:
 				
 				// wait for CSS to get processed
 				this.async(function() {
-					this.updateElementPosition(this.$.calendar);
+					this.updateElementPosition(this.$.picker);
 				});
 			},
 			
 			/**
-			 * Computes the #calendar component's class list.
+			 * Computes the #picker component's class list.
 			 *
-			 * @param open Whether the calendar is open.
-			 * @return {String} The calendar container's classes.
+			 * @param open Whether the picker is open.
+			 * @return {String} The picker's classes.
 			 */
-			_computeCalendarClasses: function(open) {
+			_computePickerClasses: function(open) {
 				return (open ? ' open' : '' );
 			}
 			

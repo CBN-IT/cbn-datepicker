@@ -39,15 +39,7 @@
 			</template>
 		</div>
 		
-		<div id="buttons" class$="[[_computeButtonBarClasses(hideButtonBar)]]">
-			<paper-icon-button class="icon" style="color: #4285f4;" icon="today"
-							   on-tap="setToday" tabindex="-1">Today
-			</paper-icon-button>
-			<span class="separator"></span>
-			<paper-icon-button class="icon" style="color: red" icon="clear"
-							   on-tap="clear" tabindex="-1">Clear
-			</paper-icon-button>
-		</div>
+		<content></content>
 	
 	</template>
 </dom-module>
@@ -152,11 +144,15 @@
 				},
 				
 				/**
-				 * Hides the button bar.
+				 * Specifies the buttons that will be added below the calendar.
+				 * 
+				 * Predefined buttons: 'today', 'clear'.
+				 * 
+				 * If empty, the buttons bar will be hidden.
 				 */
-				hideButtonBar: {
-					type: Boolean,
-					value: false
+				buttons: {
+					type: Array,
+					value: function () { return [ 'today', 'clear' ]; }
 				},
 				
 				// Private properties:
@@ -691,16 +687,8 @@
 					}
 				}
 				return 'item ' + item.cl + ' ' + additionalClasses;
-			},
-			
-			/**
-			 * Computes the CSS classes for the buttons bar.
-			 *
-			 * @param {Boolean} hideButtonBar Whether to hide it.
-			 */
-			_computeButtonBarClasses: function (hideButtonBar) {
-				return (hideButtonBar ? 'hidden' : '');
 			}
+			
 		});
 		
 		/**

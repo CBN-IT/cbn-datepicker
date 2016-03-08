@@ -15,6 +15,7 @@ Usage:
 <link rel="import" href="lib/utils.html">
 <link rel="import" href="lib/date-input-behavior.html">
 <link rel="import" href="cbn-datepicker-calendar.html">
+<link rel="import" href="cbn-date-buttons.html">
 <link rel="import" href="styles.html">
 
 <dom-module id="cbn-date-range">
@@ -33,24 +34,18 @@ Usage:
 			<div id="picker" class$="[[_computePickerClasses(_open)]]">
 				<div id="calendars">
 					<template is="dom-repeat" items="{{_calendars}}" as="cal">
-						<cbn-datepicker-calendar id="start_calendar" value="[[_calendarDate]]" is-range hide-button-bar
+						<cbn-datepicker-calendar id="start_calendar" value="[[_calendarDate]]" is-range 
 												 format="moment" min-date="[[minDate]]" max-date="[[maxDate]]"
 												 years-range-count="[[yearsRangeCount]]"
 												 on-cbn-form-register="_stopInnerEventPropagation"
 												 on-value-changed="_calendarDateChanged"
-												 current-view="{{cal.currentView}}" view-date="{{cal.viewDate}}"
-						></cbn-datepicker-calendar>
+												 current-view="{{cal.currentView}}" view-date="{{cal.viewDate}}">
+							<cbn-date-buttons buttons='[ "today", "separator", "range-left", "range-right" ]'
+											  on-date-button-clicked="_calendarButtonClicked"></cbn-date-buttons>
+						</cbn-datepicker-calendar>
 					</template>
-				</div>
-				
-				<div id="buttons">
-					<paper-icon-button class="icon" style="color: #4285f4;" icon="today"
-									   on-tap="setToday" tabindex="-1">Today
-					</paper-icon-button>
-					<span class="separator"></span>
-					<paper-icon-button class="icon" style="color: red" icon="clear"
-									   on-tap="clear" tabindex="-1">Clear
-					</paper-icon-button>
+					<cbn-date-buttons vertical buttons="[[sideButtons]]" 
+									  on-date-button-clicked="_sideButtonClicked"></cbn-date-buttons>
 				</div>
 			</div>
 		</div>
@@ -135,6 +130,55 @@ Usage:
 				yearsRangeCount: {
 					type: Number,
 					value: 0
+				},
+				
+				/**
+				 * Additional buttons to display to the side of the calendars.
+				 * 
+				 * See `cbn-date-buttons` for the template format.
+				 */
+				sideButtons: {
+					type: Array,
+					value: function() {
+						return [ "clear+text",
+							{
+								"icon": "date-range",
+								"label": "Azi",
+								"style": "color: #4285f4",
+								"date": [ "+0d", "+0d" ]
+							},
+							{
+								"icon": "date-range",
+								"label": "Ieri",
+								"style": "color: #4285f4",
+								"date": [ "-1d", "-1d" ]
+							},
+							{
+								"icon": "date-range",
+								"label": "Ult. 7 zile",
+								"style": "color: #4285f4",
+								"date": [ "-6d", "+0d" ]
+							},
+							{
+								"icon": "date-range",
+								"label": "Luna curentă",
+								"style": "color: #4285f4",
+								"date": [ "=1d", "+1m =0d" ]
+							},
+							{
+								"icon": "date-range",
+								"label": "Luna trecută",
+								"style": "color: #4285f4",
+								"date": [ "-1m =1d", "=0d" ]
+							},
+							{
+								"icon": "date-range",
+								"label": "An curent",
+								"style": "color: #4285f4",
+								"date": [ "=1d =1m", "+1y =0m =0d" ]
+							}
+						];
+					}
 				},
 				
 				/**
@@ -241,14 +285,6 @@ Usage:
 			 */
 			setDateRange: function(startDate, endDate) {
 				this._setDate([startDate, endDate]);
-			},
-			
-			/**
-			 * Sets the date to today.
-			 */
-			setToday: function() {
-				this.setDateRange(moment(), moment());
-				this.close();
 			},
 			
 			/**
@@ -464,6 +500,32 @@ Usage:
 			},
 			
 			// UI-related functions
+			
+			/**
+			 * When a calendar date button is clicked.
+			 */
+			_calendarButtonClicked: function(event) {
+				var idx = event.model['index'];
+				var parsedDate = this._parseDate(event.detail.date, true);
+				var special = event.detail.button.special;
+				if (special === 'range-left') {
+					parsedDate = this._date[0];
+				}
+				if (special === 'range-right') {
+					parsedDate = this._date[1];
+				}
+				console.log(parsedDate, this._date);
+				if (!parsedDate) return;
+				this.set('_calendars.' + idx + '.viewDate', parsedDate);
+			},
+			
+			/**
+			 * When a side button is clicked.
+			 */
+			_sideButtonClicked: function(event) {
+				this._setDate(event.detail.date);
+				this.close();
+			},
 			
 			/**
 			 * Updates the calendar's position.
