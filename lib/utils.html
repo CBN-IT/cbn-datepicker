@@ -1,0 +1,365 @@
+<script>
+	(function (scope) {
+		scope = window.Cbn = window.Cbn || {};
+		scope.DatePicker = scope.DatePicker || {};
+		
+		/**
+		 * Contains utility date manipulation functions for used by the date picker / calendar elements.
+		 */
+		scope.DatePicker.Utils = {
+			
+			/**
+			 * Parses a date string using the specified format and returns a Moment.js object.
+			 *
+			 * Additionally, it parses a custom relative date format, e.g. '+1month -1d' (one month minus 1 day from today).
+			 *
+			 * Objects can be either full names (e.g. 'days', 'years') or Moment shortands (e.g. 'm', 'd', 'Q').
+			 * Several notes regarding Moment's for  object values:
+			 *
+			 * - months are zero-based;
+			 * - days (of months) are one-based (e.g. 1 - 31);
+			 * - for both of the above, if the range is exceeded, it will bubble up the next month / year.
+			 *
+			 * Specifiers include '+' (addition to today's date), '-' (subtraction) and '=' (override a date parameter).
+			 *
+			 * More relative date examples:
+			 *
+			 * - '+1d': tomorrow (uses a Moment shortand);
+			 * - '=1d =1month': '01.01' of the current year;
+			 * - '-1y =1m =1d': first day of the previous year;
+			 *
+			 * Also accepts Date and moment objects, converting / cloning them to a new Moment object.
+			 *
+			 * @param {String|Date|moment} dateStr The input date.
+			 * @param {String|Array}       format The format[s] to try for parsing.
+			 * @param {moment|Date}        [referenceDate] The reference date for relative formats; defaults to today.
+			 * @returns {moment|null} The Moment object representing the date.
+			 */
+			parseDate: function (dateStr, format, referenceDate) {
+				var date = null;
+				if (dateStr != null) {
+					if (typeof dateStr === "string") {
+						var shortands = {
+							'm': 'months',
+							'd': 'days',
+							'y': 'years'
+						};
+						var pattern = /([+=-])([+-]?[0-9]+)\s*([a-z]+)/ig;
+						var matches = pattern.exec(dateStr);
+						if (matches) { // it's a relative date
+							if (!referenceDate) referenceDate = moment();
+							date = moment(referenceDate).startOf("day");
+							while (matches) {
+								var op = matches[1];
+								var value = parseInt(matches[2], 10);
+								var name = matches[3];
+								if (shortands.hasOwnProperty(name.toLowerCase())) {
+									name = shortands[name.toLowerCase()];
+								}
+								switch (op) {
+									case '+':
+										date.add(value, name);
+										break;
+									case '-':
+										date.subtract(value, name);
+										break;
+									case '=':
+										if (name == 'days') {
+											name = 'date';
+										}
+										date.set(name, value);
+										break;
+								}
+								matches = pattern.exec(dateStr);
+							}
+							
+						} else {
+							if (format === 'moment') {
+								// invalid value, should have been a Moment object
+								return null;
+							}
+							date = moment(dateStr, format);
+						}
+					} else {
+						date = moment(dateStr);
+					}
+				}
+				if (date && !date.isValid())
+					date = null;
+				return date;
+			},
+			
+			/**
+			 * Formats the specified Moment date object (which can be null, in which case returns the empty string).
+			 * 
+			 * Also handles a special 'moment' value, which returns the value as a moment object.
+			 *
+			 * @param {moment}  date The date to format (a moment object).
+			 * @param {String|Array} format The destination format.
+			 * @returns {moment|string} The formatted date.
+			 */
+			formatDate: function(date, format) {
+				if (format && Array.isArray(format)) {
+					format = format[0];
+				}
+				if (format == 'moment')
+					return date;
+				return ( date ? date.format(format) : '' );
+			},
+			
+			/**
+			 * Takes an arbitrary moment object and limits it using the specified `minDate` and `maxDate` values.
+			 * 
+			 * If it is outside the bounds, it returns the unaltered object, otherwise it returns a clone of the 
+			 * min / max dates.
+			 *
+			 * @param {moment} date    The date to be bounded.
+			 * @param {moment|null} [minDate] The min date.
+			 * @param {moment|null} [maxDate] The max date.
+			 * @return {moment} A date within the limits.
+			 */
+			boundDate: function (date, minDate, maxDate) {
+				if (!date) return date;
+				
+				if (minDate != null && date.isBefore(minDate)) {
+					return minDate.clone();
+				}
+				if (maxDate != null && date.isAfter(maxDate)) {
+					return maxDate.clone();
+				}
+				return date;
+			},
+			
+			/**
+			 * Normalizes a date range format object / string.
+			 * 
+			 * @param {String|Object} formatObj The range format to normalize.
+			 * @param {String|[String]} [addFormats] Additional formats to use for parsing.
+			 * @param {moment} [minDate] Lower bounds for the dates.
+			 * @param {moment} [maxDate] Upper bounds for the dates.
+			 * @return {DateRangeFormat} The normalized DateRangeFormat object.
+			 */
+			normalDateRangeFormat: function(formatObj, addFormats, minDate, maxDate) {
+				if (typeof formatObj == 'object' && formatObj['_normalized'])
+					return /**@type {DateRangeFormat}*/(formatObj); // quick optimization
+				
+				var allowedTypes = [ 'separated', 'array', 'moment-range' ];
+				var normFormatObj = /**@type {DateRangeFormat}*/(formatObj);
+				if (typeof formatObj != 'object') {
+					normFormatObj = {
+						"type": formatObj
+					};
+				}
+				if (!normFormatObj.type || allowedTypes.indexOf(normFormatObj.type) < 0) {
+					normFormatObj.type = 'array';
+				}
+				
+				var parseFormats = [ ];
+				if (normFormatObj.format)
+					parseFormats.push(normFormatObj.format);
+				if (addFormats && addFormats.length)
+					parseFormats = parseFormats.concat(addFormats);
+				if (!normFormatObj.format && parseFormats.length)
+					normFormatObj.format = parseFormats[0];
+				if (!normFormatObj.parseFormats)
+					normFormatObj.parseFormats = parseFormats;
+				
+				if (normFormatObj.type == 'moment-range')
+					normFormatObj.format = 'moment';
+				
+				if (!normFormatObj.minDate && minDate)
+					normFormatObj.minDate = minDate;
+				if (!normFormatObj.maxDate && maxDate)
+					normFormatObj.maxDate = maxDate;
+				
+				if (normFormatObj.type == 'separated') {
+					if (!normFormatObj.separator)
+						normFormatObj.separator = ' - ';
+					if (!normFormatObj.separatorPattern)
+						normFormatObj.separatorPattern = normFormatObj.separator;
+				}
+				
+				normFormatObj._normalized = true;
+				return normFormatObj;
+			},
+			
+			/**
+			 * Parses a date range value, returning an array of two moment objects.
+			 *
+			 * @param {String|Array|Object} inputRange The value to parse.
+			 * @param {DateRangeFormat|String|Object} formatObj The object that describes the format of the input range.
+			 * @return {[moment, moment]} The parsed date range (array of two moment objects / null).
+			 */
+			parseDateRange: function(inputRange, formatObj) {
+				formatObj = this.normalDateRangeFormat(formatObj);
+				var self = this;
+				
+				/**
+				 * Processes an user-provided date, returning a parsed moment object, bound within the configured min
+				 * and max.
+				 * @param {String|Object} date The date to parse.
+				 * @return {Moment|null} The parsed moment object.
+				 */
+				function processDate(date) {
+					var parsedDate = self.parseDate(date, formatObj.parseFormats);
+					if (parsedDate && !parsedDate.isValid())
+						parsedDate = null;
+					if (parsedDate) {
+						parsedDate = self.boundDate(parsedDate, formatObj.minDate, formatObj.maxDate);
+					}
+					return parsedDate;
+				}
+				
+				var dateRange = [ null, null ];
+				
+				if (inputRange && Array.isArray(inputRange)) {
+					dateRange = inputRange;
+				} else if (inputRange) {
+					switch (formatObj.type) {
+						case 'separated':
+							dateRange = (inputRange + '').split(formatObj.separatorPattern);
+							break;
+						case 'array':
+							// should have been handled in the branch above
+							break;
+						case 'moment-range':
+							if (typeof inputRange == 'object' && inputRange['toDate'])
+								dateRange = inputRange['toDate']();
+							break;
+					}
+				}
+				if (dateRange[0]) {
+					dateRange[0] = processDate(dateRange[0]);
+				} else dateRange[0] = null;
+				
+				if (dateRange[1]) {
+					dateRange[1] = processDate(dateRange[1]);
+				} else dateRange[1] = null;
+				
+				if (dateRange[0] && dateRange[1] && dateRange[0].isAfter(dateRange[1])) {
+					// swap them
+					dateRange = [ dateRange[1], dateRange[0] ];
+				}
+				return /**@type {moment[]}*/(dateRange);
+			},
+			
+			/**
+			 * Formats a date range.
+			 * 
+			 * @param {[moment, moment]} dateRange The date range to format.
+			 * @param {DateRangeFormat|String|Object} formatObj The object that describes the output format to use.
+			 */
+			formatDateRange: function(dateRange, formatObj) {
+				formatObj = this.normalDateRangeFormat(formatObj);
+				
+				var startValue = null, endValue = null;
+				if (dateRange && dateRange[0])
+					startValue = dateRange[0].format(formatObj.format);
+				if (dateRange && dateRange[1])
+					endValue = dateRange[1].format(formatObj.format);
+				
+				switch (formatObj.type) {
+					case 'separated':
+						return startValue + formatObj.separator + endValue;
+					case 'array':
+						return [ startValue, endValue ];
+					case 'moment-range':
+						return moment.range(startValue, endValue);
+				}
+			},
+			
+			/**
+			 * Compares two formatted dates. 
+			 * Returns true if they are the same, false if their formats / values differ.
+			 * 
+			 * @param {String|moment|null} date1 The first formatted date.
+			 * @param {String|moment|null} date2 The second formatted date.
+			 * @return {Boolean} True if they are equal in both value and formatting.
+			 */
+			compareFormattedDates: function(date1, date2) {
+				if (date1 && typeof date1 == 'object' && date1['isSame']) {
+					// the first date is a moment object, check if the second one is too
+					if (!(date2 && typeof date2 == 'object' && date2['isSame']))
+						return false; // their formats differ
+					return (/**@type {moment}*/(date1)).isSame(date2);
+				}
+				if (!date1 && !date2)
+					return true; // both are null
+				// else: they must have the same type (string) and value
+				return date1 === date2;
+			},
+			
+			/**
+			 * Compares two formatted date ranges, returning true if they're equal
+			 * (i.e. they have the same formatting and values).
+			 * 
+			 * @param {Array|String|Object|null} range1 The first range.
+			 * @param {Array|String|Object|null} range2 The second range.
+			 * @return {Boolean} True if they are equal in both value and formatting.
+			 */
+			compareFormattedDateRanges: function(range1, range2) {
+				if (!range1 || !range2 || !Array.isArray(range1) || !Array.isArray(range2))
+					return false; // range values must be valid arrays all the time
+				
+				if (!range1[0] && !range2[0] && !range1[1] && !range2[1]) {
+					// both are the null range
+					return true;
+					
+				} else if (range1[0] && range2[0] && !range1[1] && !range2[1]) {
+					// only the first end is chosen
+					return this.compareFormattedDates(range1[0], range2[0]);
+					
+				} else if (range1[0] && range2[0] && range1[1] && range2[1]) {
+					// full range
+					return this.compareFormattedDates(range1[0], range2[0]) &&
+						this.compareFormattedDates(range1[1], range2[1]);
+				}
+				return false; // else: not equal
+			}
+			
+		};
+		
+		/**
+		 * JSDoc definition for commonly used Moment object functions.
+		 * 
+		 * @typedef {Object} moment
+		 * @property {Function} clone
+		 * @property {Function} parse
+		 * @property {Function} format
+		 * @property {Function} add
+		 * @property {Function} subtract
+		 * @property {Function} startOf
+		 * @property {Function} endOf
+		 * @property {Function} set
+		 * @property {Function} get
+		 * @property {Function} year
+		 * @property {Function} month
+		 * @property {Function} day
+		 * @property {Function} isValid
+		 * @property {Function} isBefore
+		 * @property {Function} isAfter
+		 */
+		
+		/**
+		 * JSDoc for the moment() factory function.
+		 * 
+		 * @name moment
+		 * @param {*} object
+		 * @return {moment}
+		 */
+		
+		/**
+		 * An object which describes how to parse / format a date range object.
+		 * 
+		 * @typedef {Object} DateRangeFormat
+		 * @property {String} type The type of the outputted object (separated | moment-range | array)
+		 * @property {String} format The moment format to use for converting the dates to string.
+		 * @property {String|Array} parseFormats The moment formats to use for parsing.
+		 * @property {moment} [minDate] Lower bounds for the date values (optional).
+		 * @property {moment} [maxDate] Upper bounds for the date values (optional).
+		 * @property {String} [separator] The separator used for concatenating (if type == 'separated').
+		 * @property {String} [separatorPattern] The separator pattern to use for parsing a separated string.
+		 */
+		
+	})();
+</script>

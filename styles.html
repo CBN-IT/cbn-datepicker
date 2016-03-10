@@ -1,0 +1,269 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-styles/shadow.html">
+
+<dom-module id="cbn-datepicker-styles-private"><template><style>
+	:host {
+		display: block;
+		position: relative;
+		margin: 0;
+	}
+	
+	#input {
+		display: block;
+		width: auto;
+		@apply(--layout-flex);
+	}
+	:host(.paper-input-input) #input {
+		position: relative;
+		outline: none;
+		box-shadow: none;
+		padding: 0;
+		width: 100%;
+		border: none;
+		-webkit-appearance: none;
+		text-align: inherit;
+
+		@apply(--paper-font-subhead);
+		@apply(--paper-input-container-input);
+	}
+	
+	#picker {
+		display: none;
+		background-color: white;
+		border-radius: 6px;
+		padding: 5px;
+		position: fixed;
+		z-index: 9999;
+		
+		@apply(--shadow-elevation-2dp);
+	}
+	
+	#picker.open {
+		display: block;
+	}
+	
+</style></template></dom-module>
+
+<dom-module id="cbn-datepicker-calendar-styles"><template><style>
+	
+	:host {
+		@apply(--layout-vertical);
+		position: relative;
+		width: 224px;
+		margin: 0;
+		padding: 5px;
+		
+		background-color: white;
+		text-align: center;
+		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	}
+	
+	.calendar-header {
+		@apply(--layout-horizontal);
+	}
+	
+	.header {
+		@apply(--layout-flex);
+		text-align: center;
+		height: 40px;
+		min-width: initial;
+		font-weight: bold;
+		
+		color: #4285f4;
+		fill: #4285f4;
+	}
+	.header.hidden {
+		display: none;
+	}
+	
+	#content {
+		margin-bottom: 2px;
+		@apply(--layout-horizontal);
+		@apply(--layout-wrap);
+		@apply(--layout-start-justified);
+	}
+	
+	#content .item {
+		padding: 0;
+		margin: 0;
+		min-height: initial;
+		font-size: 0.75em;
+		border-radius: 50%;
+		text-align: center;
+		min-width: 0;
+		line-height: 2.5em;
+	}
+	
+	#content .item.fade {
+		color: #D0D0D0;
+	}
+	#content .item.disabled {
+		color: #c9c9c9;
+		text-shadow: 1px 1px #DEDEDE;
+	}
+	
+	#content .item.heading {
+		color: #666;
+		font-weight: bold;
+	}
+	
+	#content .item.days {
+		flex-basis: 14.285%; /* div 7 */
+	}
+	
+	#content .item.today {
+		color: #4285f4;
+	}	
+	
+	#content .item.months {
+		flex-basis: 25%; /* div 4 */
+		line-height: 4em;
+	}
+	
+	#content .item.years {
+		flex-basis: 20%; /* div 5 */
+		line-height: 4em;
+	}
+	
+	#content .item.selected-exact,
+	#content .item.fade.selected-exact {
+		color: #222;
+		font-weight: bold;
+		background-color: #b9b9b9;
+	}
+	#content .item.selected-range-left {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+	#content .item.selected-range-right {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	
+	#content .item.selected,
+	#content .item.fade.selected {
+		background-color: #DEDEDE;
+		color: #222;
+		border-radius: 0;
+	}
+	
+	paper-icon-button.icon {
+		margin: 0;
+	}
+	
+	.flex {
+		@apply(--layout-flex);
+	}
+	
+</style></template></dom-module>
+
+<dom-module id="cbn-date-buttons-styles"><template><style>
+	
+	:host {
+		display: block;
+	}
+	
+	:host #buttons {
+		@apply(--layout-horizontal);
+	}
+	:host([vertical]) #buttons {
+		@apply(--layout-vertical);
+	}
+	:host .separator {
+		@apply(--layout-flex);
+	}
+	
+	#buttons paper-button {
+		font-size: 0.75em;
+		line-height: 1.0em;
+		text-align: left;
+	}
+	#buttons paper-button.blue,
+	#buttons paper-icon-button.blue {
+		color: #4285f4;
+	}
+	
+	#buttons paper-button.range-left, #buttons paper-button.range-right {
+		padding: 0;
+		margin: 8px;
+		width: 24px;
+		height: 24px;
+		line-height: 24px;
+		font-size: 0.75em;
+		border-radius: 50%;
+		text-align: center;
+		min-width: 0;
+		font-weight: bold;
+		background-color: #b9b9b9;
+		color: #222;
+	}
+	#buttons paper-button.range-left {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+	#buttons paper-button.range-right {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	
+</style></template></dom-module>
+
+<dom-module id="cbn-date-range-styles"><template><style>
+	:host {
+		display: block;
+		position: relative;
+		margin: 0;
+	}
+	
+	.inputs {
+		@apply(--layout-horizontal);
+	}
+	
+	.input {
+		@apply(--layout-flex);
+		width: auto;
+		display: block;
+	}
+	:host(.paper-input-input) .input {
+		position: relative;
+		outline: none;
+		box-shadow: none;
+		padding: 0;
+		border: none;
+		-webkit-appearance: none;
+		text-align: inherit;
+		
+		@apply(--paper-font-subhead);
+		@apply(--paper-input-container-input);
+	}
+	
+	.separator {
+		padding: 0 0.3em;
+	}
+	
+	#picker {
+		background-color: white;
+		border-radius: 6px;
+		padding: 5px;
+		position: fixed;
+		z-index: 9999;
+		
+		@apply(--shadow-elevation-2dp);
+	}
+	#picker.hidden {
+		display: none;
+	}
+	
+	#calendars {
+		@apply(--layout-horizontal);
+		align-content: space-between;
+	}
+	
+	#calendars cbn-datepicker-calendar {
+		margin-right: 1em;
+	}
+	#calendars cbn-datepicker-calendar:last-of-type {
+		margin-right: 0;
+	}
+	
+</style></template></dom-module>

@@ -1,65 +1,372 @@
-<link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../cbn-form/cbn-form-abstract.html">
+<!--
+`<cbn-datepicker>` is a date input that shows a calendar for picking up the value.
 
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-button/paper-button.html">
-<link rel="import" href="../paper-shadow/paper-shadow.html">
-<link rel="import" href="../paper-input/paper-input.html">
-<link rel="import" href="../core-input/core-input.html">
-<link rel="import" href="../core-icons/core-icons.html">
-<link rel="import" href="../core-field/core-field.html">
-<link rel="import" href="../core-selector/core-selector.html">
+Usage:
+    <cbn-datepicker name="year2k" value="01.01.2000" min-date="-1m" max-date="+3y"></cbn-datepicker>
+
+-->
+<!--suppress JSUnusedGlobalSymbols -->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cbn-form/lib/include.html">
+<link rel="import" href="../cbn-polymer-extensions/lib/position-behavior.html">
+<link rel="import" href="../cbn-polymer-extensions/lib/focusable-behavior.html">
 <link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
 
+<link rel="import" href="lib/utils.html">
+<link rel="import" href="lib/date-input-behavior.html">
+<link rel="import" href="cbn-datepicker-calendar.html">
+<link rel="import" href="cbn-date-buttons.html">
+<link rel="import" href="styles.html">
 
-<polymer-element name="cbn-datepicker">
+<dom-module id="cbn-datepicker">
 	<template>
-		<link rel="stylesheet" href="cbn-datepicker.css">
+		<style include="cbn-datepicker-styles-private"></style>
 		
-		<div id="container" tabindex="-1" on-mousedown="{{_refocusInput}}">
+		<input id="input" placeholder$="[[placeholder]]" title="[[title]]" 
+			   on-focus="open" on-tap="open" autocomplete="off"
+			   on-keypress="_inputKeyPress" on-input="_displayValueChanged"
+			   value="[[_displayValue]]" />
+		
+		<div id="picker" class$="[[_computePickerClasses(_open)]]">
+			<cbn-datepicker-calendar id="calendar" value="{{_calendarDate}}" value-format="moment"
+									 min-date="[[minDate]]" max-date="[[maxDate]]"
+									 years-range-count="[[yearsRangeCount]]"
+									 current-view="{{_calendarView}}"
+									 on-cbn-form-register="_stopInnerEventPropagation"
+									 on-value-changed="_stopInnerEventPropagation"
+			></cbn-datepicker-calendar>
 			
-			<input is="core-input" id="input" placeholder="{{placeholder}}" title="{{ title }}" 
-				   on-input="{{ _inputTyped }}" on-focus="{{open}}" on-blur="{{ _inputBlur }}"
-				   value="{{ _displayValue }}" committedValue="{{ value }}" flex />
-			
-			<div id="calendar" vertical layout center-justified>
-				<paper-shadow z="1" fit></paper-shadow>
-				
-				<div class="calendar-head" layout horizontal>
-					<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-back"
-									   on-tap="{{ _navigatePrev }}"></paper-icon-button>
-					
-					<paper-button recenteringTouch="true" flex
-								  class="colored header {{ {'hidden': !_displayHeaderL } | tokenList}}"
-								  on-tap="{{ _navigateHeaderL }}">{{ _displayHeaderL }}</paper-button>
-					<paper-button recenteringTouch="true" flex
-								  class="colored header {{ {'hidden': !_displayHeaderR } | tokenList}}"
-								  on-tap="{{ _navigateHeaderR }}">{{ _displayHeaderR }}</paper-button>
-					
-					<paper-icon-button recenteringTouch="true" class="icon" icon="arrow-forward"
-									   on-tap="{{ _navigateNext }}"></paper-icon-button>
-				</div>
-				
-				<core-selector id="selector" valueattr="data-value" selected="{{ _displaySelectedItem }}" target="{{$.content}}"
-							   on-core-activate="{{ _itemSelected }}" itemsSelector=".active"></core-selector>
-				
-				<div id="content" horizontal layout wrap justified>
-					<template id="days" repeat="{{ it in _displayItems }}">
-						<paper-button recenteringTouch="true" class="{{ it.cl }}" 
-									  data-value="{{ it.val }}">{{ it.label }}</paper-button>
-					</template>
-				</div>
-				
-				<div layout horizontal>
-					<paper-icon-button class="icon" style="color: #4285f4;" icon="today" 
-									   on-tap="{{ setToday }}">Today</paper-icon-button>
-					<span flex></span>
-					<paper-icon-button class="icon" style="color: red" icon="clear" 
-									   on-tap="{{ clear }}">Clear</paper-icon-button>
-				</div>
-			</div>
+			<cbn-date-buttons id="buttons" on-date-button-clicked="_buttonClicked"></cbn-date-buttons>
 		</div>
-		
+	
 	</template>
-	<script src="cbn-datepicker.js"></script>
-</polymer-element>
+</dom-module>
+
+<script>
+	(function(scope) {
+		//noinspection JSUnusedGlobalSymbols
+		Polymer({
+			is: 'cbn-datepicker',
+			
+			properties: {
+				
+				/**
+				 * The date picker's model value, formatted using `valueFormat`.
+				 */
+				value: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * A placeholder to show when the value is empty.
+				 */
+				placeholder: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * Always disable date range values for this input.
+				 */
+				isRange: {
+					type: Boolean,
+					readOnly: true,
+					value: false
+				},
+				
+				/**
+				 * Specifies the maximum number of years to display in the calendar 'years range' view.
+				 * Zero means show all years if min / max date is bounded, else defaults to 25 years.
+				 */
+				yearsRangeCount: {
+					type: Number,
+					value: 0
+				},
+				
+				/**
+				 * The position to show the calendar / picker.
+				 *
+				 * See `PositionBehavior` for mode details.
+				 */
+				position: {
+					type: String,
+					value: "left bottom",
+					observer: '_updatePosition'
+				},
+				
+				// Private properties:
+				
+				/**
+				 * Whether the calendar is currently open.
+				 */
+				_open: { type: Boolean, value: false },
+				
+				/**
+				 * The displayed input value.
+				 */
+				_displayValue: { type: String, value: '' },
+				
+				/**
+				 * The moment.js date that defines the current calendar view.
+				 */
+				_calendarDate: {
+					type: Object, value: null,
+					observer: '_calendarDateChanged'
+				},
+				
+				/**
+				 * The current calendar view.
+				 */
+				_calendarView: { type: String, value: 'days' },
+				
+				/**
+				 * The element that should retain the focus.
+				 */
+				focusTarget: {
+					type: Object,
+					value: function() { //noinspection JSUnresolvedVariable
+						return ( this.$ && this.$.input ? this.$.input : this ); }
+				}
+				
+			},
+			
+			observers: [
+				'_displayDate(_date, format)'
+			],
+			
+			behaviors: [
+				scope.DatePicker.DateInputBehavior,
+				CbnForm.Validatable,
+				CbnForm.DynamicElement,
+				Cbn.PositionBehavior,
+				Cbn.FocusableBehavior
+			],
+			
+			listeners: {
+				'focus-in': 'open',
+				'focus-out': '_focusOut'
+			},
+			
+			/**
+			 * Element's dynamically-configurable attributes.
+			 * @type {Object}
+			 */
+			dynamicAttributes: {
+				position: true,
+				placeholder: true
+			},
+			
+			/**
+			 * If set, will avoid reformatting the displayed value.
+			 */
+			_noDisplayedValueReformatting: false,
+			
+			// API methods:
+			
+			/**
+			 * Overrides the `CbnForm.Validatable`'s `validate()` method to validate the input value.
+			 */
+			validate: function() {
+				var result = true;
+				if (this._displayValue) {
+					result = this._validateDate(this._displayValue);
+				}
+				if (!result) {
+					this.fire('cbn-form-validate', { result: result });
+					return result;
+				}
+				return CbnForm.Validatable.validate.call(this);
+			},
+			
+			/**
+			 * Changes the currently selected date.
+			 *
+			 * @param {String|Date|Moment|null} date The date to set. Accepts both Strings and Moment / Date objects.
+			 */
+			setDate: function(date) {
+				this._setDate(date);
+			},
+			
+			/**
+			 * Clears the selected date.
+			 */
+			clear: function() {
+				this.setDate('');
+				this.close();
+			},
+			
+			/**
+			 * Opens up the calendar.
+			 */
+			open: function() {
+				if (this._open){
+					return;
+				}
+				if (this._date) {
+					this._setCalendarDate(this._date.clone());
+				}
+				this._open = true;
+				this._calendarView = 'days';
+				this._updatePosition();
+			},
+			
+			/**
+			 * Hides the calendar.
+			 */
+			close: function() {
+				this._open = false;
+			},
+			
+			/**
+			 * When the element uses focus, close the picker and validate it.
+			 */
+			_focusOut: function() {
+				if (!this._displayValue || this._validateDate(this._displayValue)) {
+					this._setDate(this._displayValue);
+					this._displayDate();
+				} else {
+					this._setInternalValidationState(true);
+				}
+				this.close();
+			},
+			
+			// Calendar integration:
+			
+			/**
+			 * Sets the calendar date to the specified moment object.
+			 * 
+			 * @param {moment} date The date to set.
+			 */
+			_setCalendarDate: function(date) {
+				this._settingCalendarDate = true;
+				try {
+					this._calendarDate = date;
+					// and focus it
+					if (this._calendarDate)
+						this.$.calendar.setViewDate(this._calendarDate, 'days');
+					else 
+						this.$.calendar.setViewDate(moment(), 'days'); // focus today
+				} finally {
+					this._settingCalendarDate = false;
+				}
+			},
+			
+			/**
+			 * Called when the user picks a new date inside the calendar.
+			 */
+			_calendarDateChanged: function() {
+				if (this._settingCalendarDate) return;
+				this._setDate(this._calendarDate);
+				
+				// [commented] only close if the calendar view hasn't changed while selecting the date
+				// if (!event.detail.viewChanged)
+				this.close();
+			},
+			
+			
+			// Date <-> displayed input text conversion:
+			
+			/**
+			 * Updates the user-displayed input value to reflect the current `_date` value.
+			 */
+			_displayDate: function() {
+				// changed the date displayed inside the calendar
+				this._setCalendarDate(this._date);
+				
+				if (this._noDisplayedValueReformatting)
+					return;
+				this._displayValue = this._formatDisplayedValue(this._date);
+			},
+			
+			/**
+			 * Formats the displayed date.
+			 * @param {moment|null} date The date to format.
+			 * @return {String} The formatted date.
+			 */
+			_formatDisplayedValue: function(date) {
+				return (date ? date.format(this.format) : '');
+			},
+			
+			/**
+			 * Called when the user changes the displayed input.
+			 * 
+			 * If the text entered is parse-able as date, changes the currently selected date.
+			 * If empty, it resets the date (i.e. sets it to null).
+			 */
+			_displayValueChanged: function(event) {
+				var input = event.currentTarget;
+				// backup the input's selection
+				var start = input.selectionStart,
+					end = input.selectionEnd;
+				
+				this._displayValue = input.value;
+				if (!this._displayValue || this._validateDate(this._displayValue)) {
+					this._noDisplayedValueReformatting = true;
+					try {
+						this._setDate(this._displayValue);
+					} finally {
+						this._noDisplayedValueReformatting = false;
+					}
+				}
+				
+				// restore the selection
+				input.setSelectionRange(start, end);
+			},
+			
+			/**
+			 * Captures the input key events to listen for special keys.
+			 *
+			 * @param event The key event.
+			 */
+			_inputKeyPress: function(event) {
+				if (event.charCode == 13) { // Enter
+					this._setDate(this._displayValue);
+					this._displayDate();
+					event.preventDefault();
+				}
+			},
+			
+			// UI-related functions
+			
+			/**
+			 * When a date button is clicked.
+			 */
+			_buttonClicked: function(event) {
+				this.setDate(event.detail.date);
+				this.close();
+			},
+			
+			/**
+			 * Updates the calendar's position.
+			 *
+			 * Called automatically when the date picker opens.
+			 */
+			_updatePosition: function() {
+				if (!this._open)
+					return;
+				
+				// wait for CSS to get processed
+				this.async(function() {
+					this.updateElementPosition(this.$.picker);
+				});
+			},
+			
+			/**
+			 * Computes the #picker component's class list.
+			 *
+			 * @param open Whether the picker is open.
+			 * @return {String} The picker's classes.
+			 */
+			_computePickerClasses: function(open) {
+				return (open ? ' open' : '' );
+			}
+			
+		});
+		
+		CbnForm.registerElement('cbn-datepicker', {
+			types: ['date']
+		});
+		
+	})(window.Cbn);
+</script>

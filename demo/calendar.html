@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title>Standalone Calendar Demo</title>
+	
+	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+	
+	<link rel="import" href="../cbn-datepicker-calendar.html">
+	
+	<style is="custom-style">
+		.horizontal-calendars {
+			@apply(--layout-horizontal);
+		}
+		.horizontal-calendars p {
+			margin-right: 2em;
+			text-align: center;
+		}
+		.horizontal-calendars p:last-of-type {
+			margin-right: 0;
+		}
+	</style>
+	
+</head>
+<body>
+
+<div style="width: 600px; margin: 50px auto;">
+	<h1>Standalone Calendar Demo</h1>
+	
+	<template is="dom-bind">
+		
+		<div class="horizontal-calendars">
+			<p>
+				<b>Single pick:</b>
+				<cbn-datepicker-calendar name="date1" value="{{date1}}" format="DD.MM.YYYY"></cbn-datepicker-calendar>
+			</p>
+			<p>
+				<b>Range pick:</b>
+				<cbn-datepicker-calendar is-range name="dateRange1" value="{{dateRange1}}" format="DD.MM.YYYY"></cbn-datepicker-calendar>
+			</p>
+		</div>
+		
+		<p style="font-weight: bold;">Output: </p>
+		<pre id="stringifiedJson"></pre>
+		
+	</template>
+
+</div>
+	
+<script>
+	var tpl = document.querySelector('template[is=dom-bind]');
+	
+	function updateOutput(ev) {
+		console.trace('value changed', ev.detail);
+		
+		tpl.model[ev.target.getAttribute('name')] = ev.target.date;
+		
+		/** @namespace tpl.$.stringifiedJson */
+		tpl.$.stringifiedJson.textContent = JSON.stringify(tpl.model, null, 4);
+	}
+	document.addEventListener('value-changed', updateOutput);
+	
+	tpl.model = {
+		date1: ''
+	};
+	
+</script>
+
+</body>
+</html>

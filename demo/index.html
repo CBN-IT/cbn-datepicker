@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title>Date Pickers Showcase</title>
+	
+	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+	
+	<link rel="import" href="../../cbn-form/cbn-form.html">
+	<link rel="import" href="../../iron-input/iron-input.html">
+	
+	<link rel="import" href="../cbn-paper-datepicker.html">
+	<link rel="import" href="../cbn-paper-date-range.html">
+	
+</head>
+<body>
+
+<div  style="width: 500px; margin: 50px auto;">
+	<h1>Date picker input showcase</h1>
+	
+	<template id="tpl" is="dom-bind">
+		
+		<form is="cbn-form" id="demoForm" model="{{formModel}}">
+			
+			<p>
+				<cbn-paper-datepicker name="first" value="{{value1}}" minDate="-1m" maxDate="+3y" label="First"></cbn-paper-datepicker>
+			</p>
+			<p>
+				<cbn-paper-datepicker name="second" default-value="-8d" position="top left, top right"  label="Second"></cbn-paper-datepicker>
+			</p>
+			
+			<p>
+				<cbn-paper-date-range name="range1" position="left bottom" label="Range Picker"></cbn-paper-date-range>
+			</p>
+			<p>
+				<cbn-paper-date-range name="range2" position="left bottom" label="Range Picker 2"></cbn-paper-date-range>
+			</p>
+			
+		</form>
+		
+		<br />
+		<p style="font-weight: bold;">Output: </p>
+		<pre id="stringifiedJson"></pre>
+		
+	</template>
+</div>
+	
+<script>
+	var tpl = document.querySelector('template[is=dom-bind]');
+	tpl.formModel = {};
+	tpl.value1 = '-3d';
+	
+	tpl.addEventListener('dom-change', function(){
+		/** @namespace tpl.$.demoForm */
+		var form = tpl.$.demoForm;
+		
+		function updateOutput(ev) {
+			if (ev)
+				console.trace('value changed', ev.target.name, ev.detail);
+			/** @namespace tpl.$.stringifiedJson */
+			tpl.$.stringifiedJson.textContent = JSON.stringify(form.model, null, 4);
+		}
+		
+		form.addEventListener('value-changed', updateOutput);
+		updateOutput();
+	});
+	
+</script>
+
+</body>
+</html>

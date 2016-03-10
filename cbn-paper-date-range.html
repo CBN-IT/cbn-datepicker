@@ -1,0 +1,224 @@
+<!--
+`<cbn-paper-date-range>` is a paper-styled variant of `<cbn-date-range>`.
+
+Usage:
+    <cbn-paper-date-range label="Date Range" value='[ "today", "+1 month" ]'><cbn-paper-date-range>
+
+See `Polymer.PaperInputBehavior` and `<cbn-date-range>` for API docs.
+
+### Styling
+
+See `Polymer.PaperInputContainer` for a list of custom properties used to
+style this element.
+
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-input/paper-input-behavior.html">
+<link rel="import" href="../paper-input/paper-input-container.html">
+<link rel="import" href="../paper-input/paper-input-error.html">
+<link rel="import" href="cbn-date-range.html">
+
+<dom-module id="cbn-paper-date-range">
+	<template>
+		<style>
+			:host {
+				display: block;
+			}
+		</style>
+		
+		<paper-input-container id="container" no-label-float$="[[noLabelFloat]]" attr-for-value="value"
+							   always-float-label="[[_computeAlwaysFloatLabel(alwaysFloatLabel,placeholder)]]"
+							   auto-validate$="[[autoValidate]]" disabled$="[[disabled]]" invalid="[[invalid]]">
+			
+			<label hidden$="[[!label]]">[[label]]</label>
+			
+			<cbn-date-range name$="[[name]]" id="input" class="paper-input-input"
+							value="{{value}}" default-value="[[defaultValue]]"
+							autocomplete="[[autocomplete]]" autofocus="[[autofocus]]" size="[[size]]"
+							disabled="[[disabled]]" inputmode="[[inputmode]]" readonly="[[readonly]]"
+							placeholder$="[[placeholder]]"
+							format$="[[format]]" value-format$="[[valueFormat]]" range-format$="[[rangeFormat]]"
+							min-date$="[[minDate]]" max-date$="[[maxDate]]"
+							position$="[[position]]" position-reference="{{_self}}"
+							focusable-ancestor="cbn-paper-date-range"
+							validation="[[validation]]" validation-order="[[validationOrder]]" 
+							validation-type="[[validationType]]" default-validation-message="[[defaultValidationMessage]]"
+				></cbn-date-range>
+			
+			<template is="dom-if" if="[[errorMessage]]">
+				<paper-input-error>[[errorMessage]]</paper-input-error>
+			</template>
+		
+		</paper-input-container>
+	
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: 'cbn-paper-date-range',
+		
+		properties: {
+			
+			/**
+			 * The format in which the input's `value` will be encoded.
+			 * If this is a date range input, this property will serve as default value for `rangeFormat.format`.
+			 *
+			 * If unspecified, the `format` value will be used instead.
+			 *
+			 * Accepts all valid moment formats: http://momentjs.com/docs/#/parsing/string-format/, plus the 
+			 * following special keywords:
+			 * 
+			 * - 'moment': the value will be an unformatted Moment object.
+			 */
+			valueFormat: {
+				type: String,
+				value: 'YYYY-MM-DD'
+			},
+			
+			/**
+			 * The format to use for displaying the date to the user.
+			 * Uses Moment.js formatting (see `valueFormat`).
+			 * 
+			 * If unspecified, the `valueFormat` will be used instead (if it is a string format).
+			 */
+			format: {
+				type: String,
+				value: 'DD.MM.YYYY'
+			},
+			
+			/**
+			 * An object that describes the layout of the element's date range value.
+			 * Only used if `isRange` is true (supersedes the `valueFormat` property in this case).
+			 *
+			 * Accepts either a simple string naming the format to use or an object (if a specific type expects 
+			 * more parameters).
+			 *
+			 * Available formats:
+			 * - 'array': the two dates (start, end) are set as an array of length 2; the first item will always be
+			 *   the lesser date;
+			 * - 'separated': as String, separated using the `separatorText` value (defaults to ' - ');
+			 * - 'moment-range': outputs a Moment Range object;
+			 *
+			 * The date format can either be specified through `rangeFormat.format` or via the `format` / 
+			 * `valueFormat` element properties.
+			 *
+			 * Examples:
+			 * - `"array"` - makes it an array, formatted using the `valueFormat` / `format` properties.
+			 * - `{ "type": "array", "format": "YYYY-MM-DD" }` - an array with `[ startDate, endDate ]`;
+			 * - `{ "type": "separated", "separator": " - " }` - separated by ' - ';
+			 */
+			rangeFormat: {
+				type: Object,
+				value: 'array'
+			},
+			
+			/**
+			 * Set to disable automatic value reformatting.
+			 */
+			noReformatting: {
+				type: Boolean,
+				value: false
+			},
+			
+			/**
+			 * Specifies the minimal value of the calendar's date interval.
+			 * Uses Moment.js formatting (see `valueFormat`).
+			 */
+			minDate: {
+				type: String,
+				value: '-10y'
+			},
+			
+			/**
+			 * Specifies the maximal value of the calendar's date interval.
+			 * Uses Moment.js formatting (see `valueFormat`).
+			 */
+			maxDate: {
+				type: String,
+				value: '+10y'
+			},
+			
+			/**
+			 * The separator displayed between the inputs (note: this may be different from the value separator).
+			 */
+			separatorText: {
+				type: String,
+				value: ' - '
+			},
+			
+			/**
+			 * The position to show the calendar / picker.
+			 *
+			 * See `PositionBehavior` for mode details.
+			 */
+			position: {
+				type: String,
+				value: "left bottom"
+			},
+			
+			_ariaLabelledBy: {
+				type: String
+			},
+			
+			_ariaDescribedBy: {
+				type: String
+			},
+			
+			_self: {
+				type: Object,
+				value: function() { return this; }
+			}
+			
+		},
+		
+		behaviors: [
+			Polymer.PaperInputBehavior,
+			CbnForm.PaperContainer,
+			CbnForm.DynamicElement
+		],
+		
+		/**
+		 * Element's dynamically-configurable attributes.
+		 * @type {Object}
+		 */
+		dynamicAttributes: {
+			format: { type: 'property' },
+			valueFormat: { type: 'property' },
+			rangeFormat: { type: 'property' },
+			minDate: { type: 'property' },
+			maxDate: { type: 'property' },
+			position: { type: 'property' },
+			"label": { type: 'attribute' },
+			"placeholder": { type: 'attribute' }
+		},
+		
+		ready: function() {
+			this.$.container.addEventListener('input', this.$.container._onInput);
+			this.$.container._handleValue = function(inputElement) {
+				var value = this._inputElementValue;
+				var input = this._inputElement;
+				
+				if (input._displayValue) {
+					this._inputHasContent = true;
+				} else {
+					this._inputHasContent = !!(value && value[0]);
+				}
+				
+				this.updateAddons({
+					inputElement: inputElement,
+					value: value,
+					invalid: this.invalid
+				});
+			}
+		}
+		
+	});
+	
+	CbnForm.registerElement('cbn-paper-date-range', {
+		types: ['date-range'],
+		priority: 3
+	});
+	
+</script>

@@ -1,0 +1,248 @@
+<!--suppress JSUnusedGlobalSymbols -->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html"/>
+<link rel="import" href="../iron-icons/iron-icons.html"/>
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="styles.html">
+
+<dom-module id="cbn-date-buttons">
+	<template>
+		<style include="cbn-date-buttons-styles"></style>
+		
+		<div id="buttons">
+			<template is="dom-repeat" items="[[_renderedButtons]]" as="button">
+				<template is="dom-if" if="[[_isButtonType(button, 'icon')]]">
+					<paper-icon-button class$="[[button.className]]" style$="[[button.style]]" icon="[[ button.icon ]]"
+									   on-tap="_buttonClicked" tabindex="-1"></paper-icon-button>
+				</template>
+				<template is="dom-if" if="[[_isButtonType(button, 'regular')]]">
+					<paper-button class$="[[button.className]]" style$="[[button.style]]" 
+								  on-tap="_buttonClicked" tabindex="-1">
+						<template is="dom-if" if="[[_isButtonType(button, 'regular-icon')]]">
+							<iron-icon icon="[[button.icon]]"></iron-icon>
+						</template>
+						[[ _computeLabel(button.label, button, currentDate) ]]</paper-button>
+				</template>
+				
+				<template is="dom-if" if="[[_isButtonType(button, 'separator')]]">
+					<span class="separator"></span>
+				</template>
+				
+			</template>
+		</div>
+		
+	</template>
+</dom-module>
+
+<script>
+	(function (scope) {
+		
+		var buttonTemplates = scope.DatePicker.buttonTemplates = {
+			"today": {
+				date: '+0d',
+				icon: 'today',
+				className: 'blue'
+			},
+			"clear": {
+				date: null,
+				icon: 'clear',
+				style: 'color: red;'
+			},
+			"clear+text": {
+				date: null,
+				icon: 'clear',
+				label: 'Clear',
+				style: 'color: red;'
+			},
+			"currentDate": {
+				date: null,
+				special: 'current',
+				label: ' ',
+				dateLabel: 'D',
+				className: 'range-left'
+			},
+			"range-left": {
+				date: null,
+				special: 'range-left',
+				label: ' ',
+				rangeStartLabel: 'D',
+				className: 'range-left'
+			},
+			"range-right": {
+				date: null,
+				special: 'range-right',
+				label: ' ',
+				rangeEndLabel: 'D',
+				className: 'range-right'
+			},
+			"separator": {
+				separator: true
+			}
+		};
+		
+		Polymer({
+			is: 'cbn-date-buttons',
+			
+			properties: {
+				
+				/**
+				 * Whether the buttons are displayed vertically (instead of horizontally - the default).
+				 */
+				vertical: {
+					type: Boolean,
+					reflectToAttribute: true,
+					value: false
+				},
+				
+				/**
+				 * An array with the buttons to render.
+				 * 
+				 * It can contain one of the predefined strings: 'today', 'clear', a special keyword: 'separator',
+				 * which has a 'flex:1' attribute and takes up the free space (used to separate left and right aligned 
+				 * buttons for the horizontal bar) or a template object.
+				 * 
+				 * There are two types of buttons:
+				 * 
+				 * - icon buttons (use `paper-icon-button`);
+				 * - regular buttons (`paper-buttons`, with text label).
+				 * 
+				 * Available template properties:
+				 * 
+				 * - 'icon': the name of the icon (for defining an icon button);
+				 * - 'label': the label of the button (for defining a regular button);
+				 * - 'style': CSS text to apply to the button (string);
+				 * - 'date': the date / range to set when pressed (also accepts relative moment specifiers);
+				 * - 'dateLabel': use instead of the label to display the current date; accepts any moment format string;
+				 * - 'rangeStartLabel': same as 'dateLabel', but formats the range start value;
+				 * - 'rangeEndLabel': same as 'dateLabel', but formats the range end value;
+				 */
+				buttons: {
+					type: Array,
+					value: function() {
+						return [ 'today', 'separator', 'clear' ];
+					}
+				},
+				
+				/**
+				 * The currently selected date / range (a moment object / array).
+				 * 
+				 * Used for dynamic button labels (that display the current date as label).
+				 */
+				currentDate: {
+					type: Object,
+					value: null
+				},
+				
+				/**
+				 * Contains the normalized buttons (an array of template objects ready for being rendered).
+				 */
+				_renderedButtons: {
+					type: Array
+				}
+				
+			},
+			
+			observers: [
+				'_buttonsChanged(buttons.splices)'
+			],
+			
+			/**
+			 * When a date button is clicked. Bubbles.
+			 * 
+			 * @event date-button-clicked
+			 * @param {Object|String} detail.date The date object to set.
+			 * @param {Object} detail.button The button template object.
+			 */
+			
+			/**
+			 * Called when the buttons are changed.
+			 */
+			_buttonsChanged: function () {
+				var renderedButtons = [];
+				
+				this.buttons.forEach(function(tpl) {
+					var button = null;
+					if (typeof tpl == 'string' && buttonTemplates.hasOwnProperty(tpl)) {
+						button = buttonTemplates[tpl];
+					} else if (tpl && typeof tpl == 'object') {
+						button = tpl;
+					}
+					if (button)
+						renderedButtons.push(button);
+				});
+				
+				this._renderedButtons = renderedButtons;
+			},
+			
+			/**
+			 * When a button is clicked, emit an event.
+			 */
+			_buttonClicked: function(event) {
+				var button = event.model.button;
+				this.fire('date-button-clicked', {
+					date: button.date,
+					button: button
+				});
+			},
+			
+			// Computed properties:
+			
+			/**
+			 * Checks the type of a button.
+			 * 
+			 * @param button The template of the button.
+			 * @param type The type to check.
+			 * @returns {boolean} Whether the button has the specified type.
+			 */
+			_isButtonType: function (button, type) {
+				if (type == 'icon' && button.icon && !button.label)
+					return true;
+				if (type == 'separator' && button.separator)
+					return true;
+				if (type == 'regular-icon' && button.icon && button.label)
+					return true;
+				return !!(type == 'regular' && button.label);
+			},
+			
+			/**
+			 * Returns the label to display for the button.
+			 * 
+			 * @param {String} label The label text.
+			 * @param {Object} button The button template object.
+			 * @param {moment|null} currentDate The current date (for dynamic date labels).
+			 * @return {String} The text to display.
+			 */
+			_computeLabel: function(label, button, currentDate) {
+				var date = null;
+				if (button.dateLabel) {
+					date = ( currentDate && typeof currentDate == 'object' ?
+						currentDate : null );
+					if (date)
+						label = date.format(button.dateLabel);
+				}
+				if (button.rangeStartLabel) {
+					date = ( currentDate && Array.isArray(currentDate) ?
+						currentDate[0] : null );
+					if (date)
+						label = date.format(button.rangeStartLabel);
+				}
+				if (button.rangeEndLabel) {
+					date = ( currentDate && Array.isArray(currentDate) ?
+						currentDate[1] : null );
+					if (date)
+						label = date.format(button.rangeEndLabel);
+				}
+				
+				return label;
+			}
+			
+		});
+		
+	})(window.Cbn);
+
+</script>
