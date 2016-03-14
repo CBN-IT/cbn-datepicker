@@ -339,7 +339,7 @@
 			 *
 			 * @param {moment|[moment, moment]} date The moment date to set the view to.
 			 */
-			_changeViewDate(date) {
+			_changeViewDate: function (date) {
 				if (date && Array.isArray(date) && date[0]) {
 					date = date[0];
 				}
