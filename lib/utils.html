@@ -213,7 +213,7 @@
 				var dateRange = [ null, null ];
 				
 				if (inputRange && Array.isArray(inputRange)) {
-					dateRange = inputRange;
+					dateRange = inputRange.slice();
 				} else if (inputRange) {
 					switch (formatObj.type) {
 						case 'separated':

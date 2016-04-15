@@ -515,7 +515,6 @@ Usage:
 				if (special === 'range-right') {
 					parsedDate = this._date[1];
 				}
-				console.log(parsedDate, this._date);
 				if (!parsedDate) return;
 				this.set('_calendars.' + idx + '.viewDate', parsedDate);
 			},
