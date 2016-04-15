@@ -81,6 +81,16 @@
 				},
 				
 				/**
+				 * Used by date-range's `noResetAfterPick` option to set the range index to update.
+				 * 
+				 * -1 means disabled, 0 is the start date, 1 is the end date.
+				 */
+				preferredRangeIndex: {
+					type: Number,
+					value: -1
+				},
+				
+				/**
 				 * Specifies the format of the `date` value.
 				 *
 				 * Should be a valid Moment.js format string or the special 'moment' keyword, which makes the
@@ -318,6 +328,10 @@
 								newDate = [date, null];
 							}
 							
+						} else if (this.preferredRangeIndex > -1) {
+							newDate = [this._date[0], this._date[1]];
+							newDate[this.preferredRangeIndex] = date;
+							
 						} else { // reset the range
 							newDate = [date, null];
 						}
@@ -327,9 +341,8 @@
 				}
 				
 				// set the date!
+				this._changeViewDate(date);
 				this._setDate(newDate, indirect);
-				
-				this._changeViewDate(newDate);
 			},
 			
 			/**

@@ -39,6 +39,7 @@ style this element.
 							disabled="[[disabled]]" inputmode="[[inputmode]]" readonly="[[readonly]]"
 							placeholder$="[[placeholder]]"
 							format$="[[format]]" value-format$="[[valueFormat]]" range-format$="[[rangeFormat]]"
+							no-reset-after-pick$="[[noResetAfterPick]]" no-close-after-pick$="[[noCloseAfterPick]]"
 							min-date$="[[minDate]]" max-date$="[[maxDate]]"
 							position$="[[position]]" position-reference="{{_self}}"
 							focusable-ancestor="cbn-paper-date-range"
@@ -123,6 +124,17 @@ style this element.
 			},
 			
 			/**
+			 * Set to disable resetting the value after picking a date range.
+			 * 
+			 * Instead, only the start/end values of the range will be changed.
+			 * Works best with 2 calendars.
+			 */
+			noResetAfterPick: {
+				type: Boolean,
+				value: false
+			},
+			
+			/**
 			 * Specifies the minimal value of the calendar's date interval.
 			 * Uses Moment.js formatting (see `valueFormat`).
 			 */
@@ -185,6 +197,8 @@ style this element.
 			format: { type: 'property' },
 			valueFormat: { type: 'property' },
 			rangeFormat: { type: 'property' },
+			noResetAfterPick: { type: 'property' },
+			noCloseAfterPick: { type: 'property' },
 			minDate: { type: 'property' },
 			maxDate: { type: 'property' },
 			position: { type: 'property' },

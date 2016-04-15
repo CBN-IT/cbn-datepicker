@@ -34,11 +34,12 @@ Usage:
 			<div id="picker" class$="[[_computePickerClasses(_open)]]">
 				<div id="calendars">
 					<template is="dom-repeat" items="{{_calendars}}" as="cal">
-						<cbn-datepicker-calendar id="start_calendar" value="[[_calendarDate]]" is-range 
+						<cbn-datepicker-calendar value="[[_calendarDate]]" is-range
 												 format="moment" min-date="[[minDate]]" max-date="[[maxDate]]"
 												 years-range-count="[[yearsRangeCount]]"
 												 on-cbn-form-register="_stopInnerEventPropagation"
 												 on-value-changed="_calendarDateChanged"
+												 preferred-range-index="[[ cal.preferredRangeIndex ]]"
 												 current-view="{{cal.currentView}}" view-date="{{cal.viewDate}}">
 							<cbn-date-buttons buttons='[ "today", "separator", "range-left", "range-right" ]'
 											  current-date="[[_date]]"
@@ -81,6 +82,25 @@ Usage:
 				},
 				
 				/**
+				 * Set to disable resetting the value after picking a date range.
+				 * 
+				 * Instead, only the start/end values of the range will be changed.
+				 * Works best with 2 calendars.
+				 */
+				noResetAfterPick: {
+					type: Boolean,
+					value: false
+				},
+				
+				/**
+				 * Don't close the calendars after picking a date.
+				 */
+				noCloseAfterPick: {
+					type: Boolean,
+					value: false
+				},
+				
+				/**
 				 * The separator displayed between the inputs (note: this may be different from the value separator).
 				 */
 				separatorText: {
@@ -111,8 +131,7 @@ Usage:
 				 */
 				numCalendars: {
 					type: Number,
-					value: 2,
-					observer: '_numCalendarsChanged'
+					value: 2
 				},
 				
 				/**
@@ -243,7 +262,8 @@ Usage:
 			],
 			
 			observers: [
-				'_displayDates(_date, format, separatorText)'
+				'_displayDates(_date, format, separatorText)',
+				'_numCalendarsChanged(numCalendars, noResetAfterPick)'
 			],
 			
 			listeners: {
@@ -257,7 +277,9 @@ Usage:
 			 */
 			dynamicAttributes: {
 				position: true,
-				placeholder: true
+				placeholder: true,
+				noResetAfterPick: { type: 'property' },
+				noCloseAfterPick: { type: 'property' }
 			},
 			
 			// API methods:
@@ -377,13 +399,23 @@ Usage:
 				event.stopPropagation();
 				
 				if (this._settingCalendarDate) return;
-				this._setDate(event.detail.value);
+				
+				var indirect = undefined;
+				// warning: the cal and index properties may be uninitialized
+				if (event.model.cal) {
+					indirect = {
+						calendarIndex: event.model.index,
+						rangeIndex: event.model.cal.preferredRangeIndex
+					};
+				}
+				this._setDate(event.detail.value, indirect);
 				
 				// [commented] only close if the calendar view hasn't changed while selecting the date
 				// if (!event.detail.viewChanged)
 				// only close after both ends are chosen
-				if (this._date[0] && this._date[1])
+				if (this._date[0] && this._date[1] && !this.noCloseAfterPick) {
 					this.close();
+				}
 			},
 			
 			
@@ -503,7 +535,8 @@ Usage:
 					calendarDescriptors.push({
 						identifier: i,
 						currentView: 'days',
-						viewDate: curMonth
+						viewDate: curMonth,
+						preferredRangeIndex: ( this.noResetAfterPick ? (i>0?1:0) : -1)
 					});
 					// next calendar will show the next month, by default
 					curMonth = curMonth.clone().add(1, 'month');
