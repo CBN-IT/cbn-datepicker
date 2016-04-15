@@ -462,6 +462,17 @@ Usage:
 					pattern = new RegExp(pattern);
 				}
 				var arr = text.split(pattern);
+				if (arr.length > 2) {
+					// do an exact split after the separator text
+					var sep = /**@type {String}*/this.separatorText;
+					arr = text.split(sep);
+					if (arr.length > 2) {
+						// again? take the middle point as separator
+						var mid = Math.floor(arr.length / 2);
+						arr = [ arr.slice(0, mid).join(sep), arr.slice(mid, arr.length).join(sep) ];
+					}
+				}
+				
 				if (arr.length == 2) {
 					if (this._validateDate(arr[0]) && this._validateDate(arr[1])) {
 						return arr;
