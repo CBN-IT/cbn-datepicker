@@ -611,7 +611,7 @@ Usage:
 			types: ['date-range'],
 			message: 'This field is mandatory!',
 			validate: function(value, settings, input, stop) {
-				settings = Validator.normalizeSettings(settings);
+				settings = CbnForm.Validator.normalizeSettings(settings);
 				var valueIsArray = input._normRangeFormat && input._normRangeFormat.type == 'array';
 				function isValueEmpty(value) {
 					return (valueIsArray ? !(value && value[0]) : !!value );
