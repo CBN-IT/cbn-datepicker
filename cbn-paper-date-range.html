@@ -40,7 +40,7 @@ style this element.
 							placeholder$="[[placeholder]]"
 							format$="[[format]]" value-format$="[[valueFormat]]" range-format$="[[rangeFormat]]"
 							no-reset-after-pick$="[[noResetAfterPick]]" no-close-after-pick$="[[noCloseAfterPick]]"
-							min-date$="[[minDate]]" max-date$="[[maxDate]]"
+							min-date$="[[minDate]]" max-date$="[[maxDate]]" side-buttons="[[sideButtons]]"
 							position$="[[position]]" position-reference="{{_self}}"
 							focusable-ancestor="cbn-paper-date-range"
 							validation="[[validation]]" validation-order="[[validationOrder]]" 
@@ -168,6 +168,10 @@ style this element.
 				value: "left bottom"
 			},
 			
+			sideButtons: {
+				type: Array
+			},
+			
 			_ariaLabelledBy: {
 				type: String
 			},
@@ -199,6 +203,7 @@ style this element.
 			rangeFormat: { type: 'property' },
 			noResetAfterPick: { type: 'property' },
 			noCloseAfterPick: { type: 'property' },
+			sideButtons: true,
 			minDate: { type: 'property' },
 			maxDate: { type: 'property' },
 			position: { type: 'property' },
