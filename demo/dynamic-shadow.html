@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title>Date Pickers Showcase</title>
+	
+	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+	
+	<link rel="import" href="../../cbn-form/cbn-form.html">
+	<link rel="import" href="../../iron-input/iron-input.html">
+	
+	<link rel="import" href="../../cbn-form/cbn-dynamic-form.html">
+	<link rel="import" href="../cbn-paper-datepicker.html">
+	<link rel="import" href="../cbn-paper-date-range.html">
+	
+	<dom-module id="demo-element">
+		<template>
+			<template is="dom-if" if="[[active]]">
+				<form id="demoForm" is="cbn-form" model="{{model}}" expose-form-elements>
+					<cbn-dynamic-form target="light" render-after-attach config="[[formConfig]]"></cbn-dynamic-form>
+					<br/>
+					<button type="submit">Submit</button>
+					<button type="reset">Reset</button>
+				</form>
+			</template>
+		</template>
+	</dom-module>
+	
+	<script>
+		Polymer({
+			is: "demo-element",
+			
+			properties: {
+				model: {
+					type: Object,
+					notify: true
+				},
+				formConfig: {
+					type: Object
+				},
+				active: {
+					type: Boolean,
+					value: false
+				}
+			},
+			
+			attached: function() {
+				this.model = { range1: [ "-10d", "+2y" ] };
+				setTimeout(function(){
+					this.active = true;
+					this.set('model.first', "01.01.2001");
+				}.bind(this), 1000);
+			}
+			
+		});
+	</script>
+	
+</head>
+<body>
+
+<div  style="width: 500px; margin: 50px auto;">
+	<h1>Dynamic date picker inside element</h1>
+	
+	<template is="dom-bind">
+		
+		<demo-element id="demo" form-config="[[formConfig]]"></demo-element>
+		
+		<p style="font-weight: bold;">Output: </p>
+		<pre id="stringifiedJson"></pre>
+		
+	</template>
+
+</div>
+	
+<script>
+	var tpl = document.querySelector('template[is=dom-bind]');
+	
+	tpl.addEventListener('dom-change', function(){
+		/** @namespace tpl.$.demoForm */
+		var demo = tpl.$.demo;
+		
+		function updateOutput(ev) {
+			if (ev)
+				console.trace('value changed', ev.target.name, ev.detail);
+			/** @namespace tpl.$.stringifiedJson */
+			tpl.$.stringifiedJson.textContent = JSON.stringify(demo.model, null, 4);
+		}
+		
+		demo.addEventListener('value-changed', updateOutput);
+		updateOutput();
+	});
+	
+	tpl.formConfig = {
+		"elements": [
+			{
+				"name": "first",
+				"label": "Paper DatePicker (not required)",
+				"type": "date",
+				"title": "First",
+				"className": "",
+				"validation": {
+					"required": false
+				},
+				"autoValidate": true
+			},
+			{
+				"name": "second",
+				"label": "Paper DatePicker (required)",
+				"type": "date",
+				"defaultValue": "+15d",
+				"validation": {
+					"required": true
+				},
+				"autoValidate": true
+			},
+			{
+				"name": "range1",
+				"label": "Paper Date Range (required)",
+				"type": "date-range",
+				"format": "YYYY-MM-DD",
+				"defaultValue": ["-0d", "+1y"],
+				"validation": {
+					"required": true
+				},
+				"autoValidate": true
+			},
+			{
+				"name": "range2",
+				"label": "Paper Date Range (no reset after pick)",
+				"type": "date-range",
+				"format": "DD.MM.YYYY",
+				"defaultValue": ["-0d", "+2m"],
+				"noResetAfterPick": true,
+				"noCloseAfterPick": true,
+				"validation": {
+					"required": true
+				},
+				"autoValidate": true
+			}
+		]
+	};
+
+</script>
+
+</body>
+</html>

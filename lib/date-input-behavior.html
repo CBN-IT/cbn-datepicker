@@ -325,7 +325,13 @@
 			_valueChanged: function() {
 				if (!this._settingDate) {
 					// parse the value and set the internal date object
-					this._setDate(this.value);
+					var parsedDate = this._parseDate(this.value);
+					try {
+						this._settingDate = true;
+						this._date = parsedDate;
+					} finally {
+						this._settingDate = false;
+					}
 				}
 				
 				if (this._inputValueIndirectlyChanged) {
@@ -365,10 +371,9 @@
 						} else {
 							sameFormatAndValue = utils.compareFormattedDates(formattedValue, this.value);
 						}
-						
 						if (!sameFormatAndValue) {
 							// set it indirectly with the `reformatted` flag
-							this.async(function(){
+							this.debounce('reformatValue', function(){
 								this._setIndirectValue(formattedValue, {
 									'reformatted': true
 								});
