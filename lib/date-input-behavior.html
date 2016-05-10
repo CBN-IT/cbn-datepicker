@@ -368,8 +368,10 @@
 						
 						if (!sameFormatAndValue) {
 							// set it indirectly with the `reformatted` flag
-							this._setIndirectValue(formattedValue, {
-								'reformatted': true
+							this.async(function(){
+								this._setIndirectValue(formattedValue, {
+									'reformatted': true
+								});
 							});
 						}
 					}
