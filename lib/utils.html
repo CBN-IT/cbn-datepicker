@@ -188,9 +188,10 @@
 			 *
 			 * @param {String|Array|Object} inputRange The value to parse.
 			 * @param {DateRangeFormat|String|Object} formatObj The object that describes the format of the input range.
+			 * @param {moment|Date}        [referenceDate] The reference date for relative formats; defaults to today.
 			 * @return {[moment, moment]} The parsed date range (array of two moment objects / null).
 			 */
-			parseDateRange: function(inputRange, formatObj) {
+			parseDateRange: function(inputRange, formatObj, referenceDate) {
 				formatObj = this.normalDateRangeFormat(formatObj);
 				var self = this;
 				
@@ -201,7 +202,7 @@
 				 * @return {Moment|null} The parsed moment object.
 				 */
 				function processDate(date) {
-					var parsedDate = self.parseDate(date, formatObj.parseFormats);
+					var parsedDate = self.parseDate(date, formatObj.parseFormats, referenceDate);
 					if (parsedDate && !parsedDate.isValid())
 						parsedDate = null;
 					if (parsedDate) {

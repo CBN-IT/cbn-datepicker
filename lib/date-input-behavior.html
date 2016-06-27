@@ -237,9 +237,10 @@
 			 * 
 			 * @param {String|Date|Moment|null|Array} date The date / range to set.
 			 * @param {Boolean|Object} [indirect] Whether to emit an indirect value change notification.
+			 * @param {Date|Moment} [relativeDate] Relative date to use.
 			 */
-			_setDate: function(date, indirect) {
-				var parsedDate = this._parseDate(date);
+			_setDate: function(date, indirect, relativeDate) {
+				var parsedDate = this._parseDate(date, false, relativeDate);
 				// do not change it if the resulting (parsed) date is the same
 				// (makes date setting idempotent with no extraneous notifications)
 				if (this.isRange) {
@@ -276,16 +277,17 @@
 			 * 
 			 * @param {String|Date|Moment|null|Array} date The input date / range.
 			 * @param {Boolean} [single] If set and this is a ranged picker, will parse the date as standalone.
+			 * @param {Date|Moment} [referenceDate] An optional date to use as reference.
 			 * @return {moment|[moment, moment]|null} The parsed date / range as moment object(s). Null if invalid.
 			 */
-			_parseDate: function(date, single) {
+			_parseDate: function(date, single, referenceDate) {
 				var parsedDate = null;
 				if (this.isRange && !single) {
 					// parsedDate will be an array
-					parsedDate = utils.parseDateRange(date, this._normRangeFormat);
+					parsedDate = utils.parseDateRange(date, this._normRangeFormat, referenceDate);
 				} else {
 					// parseDate is a single moment object
-					parsedDate = utils.parseDate(date, this._parseFormats);
+					parsedDate = utils.parseDate(date, this._parseFormats, referenceDate);
 					parsedDate = utils.boundDate(parsedDate, this._minDate, this._maxDate);
 				}
 				return parsedDate;

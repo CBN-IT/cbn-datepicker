@@ -195,6 +195,7 @@ Usage:
 								"icon": "date-range",
 								"label": "An curent",
 								"style": "color: #4285f4",
+								"referenceDate": "selected",
 								"date": [ "=1d =1m", "+1y =0m =0d" ]
 							}
 						];
@@ -568,7 +569,13 @@ Usage:
 			 * When a side button is clicked.
 			 */
 			_sideButtonClicked: function(event) {
-				this._setDate(event.detail.date);
+				var referenceDate = null;
+				if (event.detail.button.referenceDate == 'selected') {
+					if (this._date[0]) {
+						referenceDate = this._date[0];
+					}
+				}
+				this._setDate(event.detail.date, undefined, referenceDate);
 				this.close();
 			},
 			
