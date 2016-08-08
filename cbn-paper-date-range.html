@@ -167,7 +167,13 @@ style this element.
 				type: String,
 				value: "left bottom"
 			},
-			
+			/**
+			 * This input has a special value (sometimes an array), so use a specific validation type.
+			 */
+			validationType: {
+				type: String,
+				value: 'date-range'
+			},
 			sideButtons: {
 				type: Array
 			},
