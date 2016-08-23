@@ -23,7 +23,8 @@
     "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.1",
     "cbn-form": "git@bitbucket.org:cbn-it/cbn-form.git#master",
     "cbn-momentjs": "git@bitbucket.org:cbn-it/cbn-momentjs.git#master",
-    "cbn-polymer-extensions": "git@bitbucket.org:cbn-it/cbn-polymer-extensions.git#master"
+    "cbn-polymer-extensions": "git@bitbucket.org:cbn-it/cbn-polymer-extensions.git#master",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.2.5"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester",

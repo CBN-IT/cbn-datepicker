@@ -12,42 +12,45 @@
 	<link rel="import" href="../../cbn-form/cbn-dynamic-form.html">
 	<link rel="import" href="../cbn-paper-datepicker.html">
 	<link rel="import" href="../cbn-paper-date-range.html">
+
+	<link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+	<link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
 	
 </head>
 <body>
 
 <div  style="width: 500px; margin: 50px auto;">
 	<h1>Dynamic date picker</h1>
-	
-	<template is="dom-bind">
+	<form id="demoForm" is="cbn-form" model>
+		<demo-snippet class="centered-demo" style="position:relative">
+			<template is="dom-bind">
+				<p>
+					<cbn-dynamic-form target="light" config="[[formConfig]]"></cbn-dynamic-form>
+					<br />
+					<button type="submit">Submit</button> <button type="reset">Reset</button>
+				</p>
+			</template>
+		</demo-snippet>
+		<br/>
+	</form>
 		
-		<form id="demoForm" is="cbn-form" model>
-			
-			<cbn-dynamic-form target="light" config="[[formConfig]]"></cbn-dynamic-form>
-			<br />
-			<button type="submit">Submit</button> <button type="reset">Reset</button>
-			
-		</form>
-		
-		<p style="font-weight: bold;">Output: </p>
-		<pre id="stringifiedJson"></pre>
-		
-	</template>
-
+	<p style="font-weight: bold;">Output: </p>
+	<pre id="stringifiedJson"></pre>
 </div>
 	
 <script>
 	var tpl = document.querySelector('template[is=dom-bind]');
+	var form = document.querySelector('form[is=cbn-form]');
+	var output = document.getElementById('stringifiedJson');
 	
 	tpl.addEventListener('dom-change', function(){
 		/** @namespace tpl.$.demoForm */
-		var form = tpl.$.demoForm;
 		
 		function updateOutput(ev) {
 			if (ev)
 				console.trace('value changed', ev.target.name, ev.detail);
 			/** @namespace tpl.$.stringifiedJson */
-			tpl.$.stringifiedJson.textContent = JSON.stringify(form.model, null, 4);
+			output.textContent = JSON.stringify(form.model, null, 4);
 		}
 		
 		form.addEventListener('value-changed', updateOutput);
