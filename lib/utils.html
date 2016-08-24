@@ -255,9 +255,9 @@
 				
 				var startValue = null, endValue = null;
 				if (dateRange && dateRange[0])
-					startValue = dateRange[0].format(formatObj.format);
+					startValue = this.formatDate(dateRange[0], formatObj.format);
 				if (dateRange && dateRange[1])
-					endValue = dateRange[1].format(formatObj.format);
+					endValue = this.formatDate(dateRange[1], formatObj.format);
 				
 				switch (formatObj.type) {
 					case 'separated':

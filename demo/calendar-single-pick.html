@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title>Standalone Calendar Demo</title>
+
+	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+	<link rel="import" href="../cbn-datepicker-calendar.html">
+
+	<link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+	<link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+
+	<style is="custom-style">
+		.horizontal-calendars {
+			@apply(--layout-horizontal);
+		}
+		.horizontal-calendars p {
+			text-align: center;
+			margin:auto;
+
+		}
+	</style>
+
+</head>
+<body>
+
+<div style="width: 600px; margin: 50px auto;">
+	<h1>Standalone Calendar Demo</h1>
+	<form is="cbn-form" id="demoForm" model="{{formModel}}">
+		<demo-snippet class="centered-demo" style="position:relative">
+			<template is="dom-bind">
+				<div class="horizontal-calendars">
+					<p>
+						<b>Single pick:</b>
+						<cbn-datepicker-calendar name="date1" value="{{date1}}" format="DD.MM.YYYY"></cbn-datepicker-calendar>
+					</p>
+				</div>
+			</template>
+		</demo-snippet>
+		<br/>
+	</form>
+	<p style="font-weight: bold;">Output: </p>
+	<pre id="stringifiedJson"></pre>
+
+</div>
+
+<script>
+	var tpl = document.querySelector('template[is=dom-bind]');
+	var form = document.querySelector('form[is=cbn-form]');
+	var output= document.getElementById('stringifiedJson');
+
+
+	function updateOutput(ev) {
+		console.trace('value changed', ev.detail);
+
+		form.model[ev.target.getAttribute('name')] = ev.target.value;
+
+		/** @namespace tpl.$.stringifiedJson */
+		output.textContent = JSON.stringify(form.model, null, 4);
+	}
+	document.addEventListener('value-changed', updateOutput);
+
+	form.model = {
+	};
+
+</script>
+
+</body>
+</html>

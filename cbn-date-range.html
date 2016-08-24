@@ -35,7 +35,8 @@ Usage:
 				<div id="calendars">
 					<template is="dom-repeat" items="{{_calendars}}" as="cal">
 						<cbn-datepicker-calendar value="[[_calendarDate]]" is-range
-												 format="moment" min-date="[[minDate]]" max-date="[[maxDate]]"
+												 value-format="moment" format="moment"
+												 min-date="[[minDate]]" max-date="[[maxDate]]"
 												 years-range-count="[[yearsRangeCount]]"
 												 on-cbn-form-register="_stopInnerEventPropagation"
 												 on-value-changed="_calendarDateChanged"
