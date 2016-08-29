@@ -41,21 +41,18 @@
 <script>
 	var tpl = document.querySelector('template[is=dom-bind]');
 	var form = document.querySelector('form[is=cbn-form]');
-	var output = document.getElementById('stringifiedJson');
+	var output = document.getElementById("stringifiedJson");
 	
-	tpl.addEventListener('dom-change', function(){
-		/** @namespace tpl.$.demoForm */
-		
-		function updateOutput(ev) {
-			if (ev)
-				console.trace('value changed', ev.target.name, ev.detail);
-			/** @namespace tpl.$.stringifiedJson */
-			output.textContent = JSON.stringify(form.model, null, 4);
+	function updateOutput(ev) {
+		if (ev) {
+			console.trace('value changed', ev.target.name, ev.detail);
 		}
-		
-		form.addEventListener('value-changed', updateOutput);
-		updateOutput();
-	});
+		/** @namespace tpl.$.stringifiedJson */
+		output.textContent = JSON.stringify(form.model, null, 4);
+	}
+	
+	form.addEventListener('value-changed', updateOutput);
+	updateOutput();
 	
 	tpl.formConfig = {
 		"elements": [

@@ -1,4 +1,3 @@
-<!--suppress JSUnusedGlobalSymbols, JSPotentiallyInvalidUsageOfThis -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
 
@@ -11,6 +10,26 @@
 <link rel="import" href="lib/utils.html">
 <link rel="import" href="lib/date-input-behavior.html">
 <link rel="import" href="styles.html">
+
+<!--
+`<cbn-datepicker-calendar>` is the standalone calendar component on which 
+datepicker is based.
+
+Usage:
+```
+<cbn-datepicker-calendar value="{{value}}"></cbn-datepicker-calendar>
+```
+
+Also supports range picking:
+```
+<cbn-datepicker-calendar is-range value="{{value}}"></cbn-datepicker-calendar>
+```
+
+@group CBN Elements
+@element cbn-datepicker-calendar
+@demo demo/calendar-single-pick.html
+@demo demo/calendar-range-pick.html
+-->
 
 <dom-module id="cbn-datepicker-calendar">
 	<template>
@@ -50,7 +69,6 @@
 	(function (scope, utils) {
 		utils = scope.DatePicker.Utils;
 		
-		//noinspection JSUnusedGlobalSymbols
 		Polymer({
 			is: 'cbn-datepicker-calendar',
 			

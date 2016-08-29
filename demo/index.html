@@ -21,11 +21,11 @@
 <div style="width: 500px; margin: 50px auto;">
 	<h1>Date picker input showcase</h1>
 
-	<form is="cbn-form" id="demoForm" model="{{formModel}}">
+	<form is="cbn-form" id="demoForm" model="{}"><div>
 		<demo-snippet class="centered-demo" style="position:relative">
 			<template is="dom-bind">
 				<p>
-					<cbn-paper-datepicker name="first" value="{{value1}}" minDate="-1m" maxDate="+3y"
+					<cbn-paper-datepicker name="first" value="-3d" minDate="-1m" maxDate="+3y"
 										  label="First"></cbn-paper-datepicker>
 				</p>
 			</template>
@@ -58,7 +58,7 @@
 			</template>
 		</demo-snippet>
 		<br/>
-	</form>
+	</div></form>
 
 	<br/>
 	<p style="font-weight: bold;">Output: </p>
@@ -66,26 +66,19 @@
 </div>
 
 <script>
-	var tpls = document.querySelectorAll('template[is=dom-bind]');
 	var form = document.querySelector('form[is=cbn-form]');
 	var output = document.getElementById("stringifiedJson");
-	tpls.forEach(function (tpl, index) {
-		tpl.value1 = '-3d';
-		tpl.addEventListener('dom-change', function () {
-			/** @namespace tpl.$.demoForm */
-
-			function updateOutput(ev) {
-				if (ev)
-					console.trace('value changed', ev.target.name, ev.detail);
-				/** @namespace tpl.$.stringifiedJson */
-				output.textContent = JSON.stringify(form.model, null, 4);
-			}
-
-			form.addEventListener('value-changed', updateOutput);
-			updateOutput();
-		});
-	})
-
+	
+	function updateOutput(ev) {
+		if (ev) {
+			console.trace('value changed', ev.target.name, ev.detail);
+		}
+		/** @namespace tpl.$.stringifiedJson */
+		output.textContent = JSON.stringify(form.model, null, 4);
+	}
+	
+	form.addEventListener('value-changed', updateOutput);
+	updateOutput();
 
 </script>
 

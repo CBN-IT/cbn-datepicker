@@ -27,7 +27,7 @@
 
 <div style="width: 600px; margin: 50px auto;">
 	<h1>Standalone Calendar Demo</h1>
-	<form is="cbn-form" id="demoForm" model="{{formModel}}">
+	<form is="cbn-form" id="demoForm" model>
 		<demo-snippet class="centered-demo" style="position:relative">
 			<template is="dom-bind">
 				<div class="horizontal-calendars">
@@ -46,10 +46,8 @@
 </div>
 
 <script>
-	var tpl = document.querySelector('template[is=dom-bind]');
 	var form = document.querySelector('form[is=cbn-form]');
 	var output= document.getElementById('stringifiedJson');
-
 
 	function updateOutput(ev) {
 		console.trace('value changed', ev.detail);
@@ -60,9 +58,6 @@
 		output.textContent = JSON.stringify(form.model, null, 4);
 	}
 	document.addEventListener('value-changed', updateOutput);
-
-	form.model = {
-	};
 
 </script>
 
