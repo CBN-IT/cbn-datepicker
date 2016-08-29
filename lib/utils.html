@@ -94,7 +94,7 @@
 			 * 
 			 * Also handles a special 'moment' value, which returns the value as a moment object.
 			 *
-			 * @param {moment}  date The date to format (a moment object).
+			 * @param {moment|null}  date The date to format (a moment object).
 			 * @param {String|Array} format The destination format.
 			 * @returns {moment|string} The formatted date.
 			 */
@@ -254,10 +254,12 @@
 				formatObj = this.normalDateRangeFormat(formatObj);
 				
 				var startValue = null, endValue = null;
-				if (dateRange && dateRange[0])
-					startValue = this.formatDate(dateRange[0], formatObj.format);
-				if (dateRange && dateRange[1])
-					endValue = this.formatDate(dateRange[1], formatObj.format);
+				if (dateRange && dateRange.length) {
+					startValue = dateRange[0];
+					endValue = dateRange[1];
+				}
+				startValue = this.formatDate(startValue, formatObj.format);
+				endValue = this.formatDate(endValue, formatObj.format);
 				
 				switch (formatObj.type) {
 					case 'separated':
