@@ -17,6 +17,7 @@ Usage:
 <link rel="import" href="lib/utils.html">
 <link rel="import" href="lib/date-input-behavior.html">
 <link rel="import" href="cbn-datepicker-calendar.html">
+<link rel="import" href="cbn-time-picker.html">
 <link rel="import" href="cbn-date-buttons.html">
 <link rel="import" href="styles.html">
 
@@ -37,6 +38,14 @@ Usage:
 									 on-cbn-form-register="_stopInnerEventPropagation"
 									 on-value-changed="_stopInnerEventPropagation"
 			></cbn-datepicker-calendar>
+			
+			<template is="dom-if" if="[[withTime]]">
+				<cbn-time-picker id="time" value="{{_time}}" value-format="moment"
+								label="Time"
+								on-cbn-form-register="_stopInnerEventPropagation"
+								on-value-changed="_stopInnerEventPropagation"
+				></cbn-time-picker>
+			</template>
 			
 			<cbn-date-buttons id="buttons" on-date-button-clicked="_buttonClicked"></cbn-date-buttons>
 		</div>
@@ -115,6 +124,14 @@ Usage:
 				_calendarDate: {
 					type: Object, value: null,
 					observer: '_calendarDateChanged'
+				},
+				
+				/**
+				 * The moment.js object that defines the current time picker value.
+				 */
+				_time: {
+					type: Object,
+					observer: '_timePicked'
 				},
 				
 				/**
@@ -221,6 +238,25 @@ Usage:
 			},
 			
 			/**
+			 * Changes the time portion of the selected date.
+			 */
+			_setTime: function (time) {
+				var datetime = self._date || moment();
+				console.log("TIME", time);
+				if (time == null) {
+					datetime.set("hour", 0);
+					datetime.set("minute", 0);
+					datetime.set("second", 0);
+				} else {
+					datetime.set("hour", time.get("hour"));
+					datetime.set("minute", time.get("minute"));
+					datetime.set("second", time.get("second"));
+				}
+				
+				this._setDate(datetime);
+			},
+			
+			/**
 			 * When the element uses focus, close the picker and validate it.
 			 */
 			_focusOut: function() {
@@ -244,6 +280,7 @@ Usage:
 				this._settingCalendarDate = true;
 				try {
 					this._calendarDate = date;
+					this._time = date;
 					// and focus it
 					if (this._calendarDate)
 						this.$.calendar.setViewDate(this._calendarDate, 'days');
@@ -266,6 +303,13 @@ Usage:
 				this.close();
 			},
 			
+			/**
+			 * Called when the user picks a new time.
+			 */
+			_timePicked: function(time) {
+				if (this._settingCalendarDate) return;
+				this._setTime(time);
+			},
 			
 			// Date <-> displayed input text conversion:
 			

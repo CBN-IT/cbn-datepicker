@@ -38,6 +38,7 @@ style this element.
 			
 			<cbn-datepicker name$="[[name]]" id="input" class="paper-input-input"
 							value="{{value}}" default-value="[[defaultValue]]"
+							with-time="[[withTime]]"
 							autocomplete="[[autocomplete]]" autofocus="[[autofocus]]" size="[[size]]"
 							disabled="[[disabled]]" inputmode="[[inputmode]]" readonly="[[readonly]]"
 							placeholder$="[[placeholder]]"
@@ -89,6 +90,11 @@ style this element.
 			format: {
 				type: String,
 				value: 'DD.MM.YYYY'
+			},
+			
+			withTime: {
+				type: Boolean,
+				value: false
 			},
 			
 			/**

@@ -277,14 +277,16 @@
 			 * 
 			 * @param {String|moment|null} date1 The first formatted date.
 			 * @param {String|moment|null} date2 The second formatted date.
+			 * @param {Boolean} [withTime] Whether to include the time for comparison.
 			 * @return {Boolean} True if they are equal in both value and formatting.
 			 */
-			compareFormattedDates: function(date1, date2) {
+			compareFormattedDates: function(date1, date2, withTime) {
+				var granularity = (withTime ? 'second' : 'day');
 				if (date1 && typeof date1 == 'object' && date1['isSame']) {
 					// the first date is a moment object, check if the second one is too
 					if (!(date2 && typeof date2 == 'object' && date2['isSame']))
 						return false; // their formats differ
-					return (/**@type {moment}*/(date1)).isSame(date2);
+					return (/**@type {moment}*/(date1)).isSame(date2, granularity);
 				}
 				if (!date1 && !date2)
 					return true; // both are null
@@ -298,9 +300,10 @@
 			 * 
 			 * @param {Array|String|Object|null} range1 The first range.
 			 * @param {Array|String|Object|null} range2 The second range.
+			 * @param {Boolean} [withTime] Whether to include the time for comparison.
 			 * @return {Boolean} True if they are equal in both value and formatting.
 			 */
-			compareFormattedDateRanges: function(range1, range2) {
+			compareFormattedDateRanges: function(range1, range2, withTime) {
 				if (!range1 || !range2 || !Array.isArray(range1) || !Array.isArray(range2))
 					return false; // range values must be valid arrays all the time
 				
@@ -310,12 +313,12 @@
 					
 				} else if (range1[0] && range2[0] && !range1[1] && !range2[1]) {
 					// only the first end is chosen
-					return this.compareFormattedDates(range1[0], range2[0]);
+					return this.compareFormattedDates(range1[0], range2[0], withTime);
 					
 				} else if (range1[0] && range2[0] && range1[1] && range2[1]) {
 					// full range
-					return this.compareFormattedDates(range1[0], range2[0]) &&
-						this.compareFormattedDates(range1[1], range2[1]);
+					return this.compareFormattedDates(range1[0], range2[0], withTime) &&
+						this.compareFormattedDates(range1[1], range2[1], withTime);
 				}
 				return false; // else: not equal
 			}

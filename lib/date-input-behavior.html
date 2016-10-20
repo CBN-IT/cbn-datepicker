@@ -64,6 +64,14 @@
 				},
 				
 				/**
+				 * Whether the date also has a time part.
+				 */
+				withTime: {
+					type: Boolean,
+					value: false
+				},
+				
+				/**
 				 * The format in which the input's `value` will be encoded.
 				 * If this is a date range input, this property will serve as default value for `rangeFormat.format`.
 				 *
@@ -248,7 +256,8 @@
 						return;
 					}
 				} else {
-					if (parsedDate && parsedDate.isSame(this._date, 'day')) {
+					var granularity = (this.withTime ? 'second' : 'day');
+					if (parsedDate && parsedDate.isSame(this._date, granularity)) {
 						return;
 					}
 				}

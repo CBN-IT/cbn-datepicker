@@ -1,0 +1,208 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cbn-momentjs/cbn-momentjs.html">
+
+<link rel="import" href="../paper-slider/paper-slider.html">
+
+<link rel="import" href="lib/utils.html">
+<link rel="import" href="lib/date-input-behavior.html">
+<link rel="import" href="styles.html">
+
+<!--
+`<cbn-time-picker>` is the standalone calendar component on which 
+datepicker is based.
+
+Usage:
+```
+<cbn-time-picker value="{{value}}"></cbn-time-picker>
+```
+
+@group CBN Elements
+@element cbn-time-picker
+@demo demo/index.html
+-->
+
+<dom-module id="cbn-time-picker">
+	<template>
+		<!-- <style include="cbn-time-picker-styles"></style> -->
+		<style>
+			:host {
+				display: flex;
+				@apply(--layout-horizontal);
+				@apply(--layout-baseline);
+			}
+			.slider-input {
+				width: 40px;
+				display: inline-block;
+				overflow: hidden;
+				--paper-input-container-input: {
+					text-align: center;
+				};
+			}
+			.cap {
+				padding: 0 7px;
+			}
+		</style>
+		
+		<!--div>
+			H: <paper-slider on-click="_stopFocusingPlease" class="hour" pin snaps step="1" value="{{_timeHour}}" max="23" editable></paper-slider>
+			M: <paper-slider on-click="_stopFocusingPlease" class="minute" pin snaps step="5" value="{{_timeMinute}}" max="59" editable></paper-slider>
+			</div-->
+			<div class="cap">[[label]]</div><paper-input
+				id="input"
+				type="number"
+				step="1" min="9" max="20"
+				class="slider-input"
+				value="{{_timeHour}}"
+				no-label-float>
+			</paper-input>
+			<div class="cap">:</div>
+			<paper-input
+				id="input"
+				type="number"
+				step="5" min="0" max="55"
+				class="slider-input"
+				value="{{_timeMinute}}"
+				no-label-float>
+			</paper-input>
+
+	</template>
+</dom-module>
+
+<script>
+	(function (scope, utils) {
+		utils = scope.DatePicker.Utils;
+		
+		Polymer({
+			is: 'cbn-time-picker',
+			
+			properties: {
+				
+				/**
+				 * The currently selected time.
+				 *
+				 * Uses the format specified by the `format` property.
+				 */
+				value: {
+					type: Object,
+					value: '',
+					notify: false // manual bubbling notification
+				},
+				
+				/**
+				 * Specifies the format of the value.
+				 *
+				 * Should be a valid Moment.js format string or the special 'moment' keyword, which makes the
+				 * `date` property to store a Moment object.
+				 */
+				valueFormat: {
+					type: String,
+					value: 'HH:mm'
+				},
+				
+				/**
+				 * Label for the input.
+				 */
+				label: {
+					type: String,
+					value: ''
+				},
+				
+				/**
+				 * The date always includes a time part.
+				 */
+				withTime: {
+					type: Boolean,
+					value: true
+				},
+				
+				// Private properties:
+				
+				/**
+				 * Stores the selected hour.
+				 */
+				_timeHour: {
+					type: Number
+				},
+				
+				/**
+				 * Stores the selected minute.
+				 */
+				_timeMinute: {
+					type: Number
+				}
+			},
+			
+			observers: [
+				'_displayTime(_date, format)',
+				'_timeSelected(_timeHour, _timeMinute)'
+			],
+			
+			behaviors: [
+				scope.DatePicker.DateInputBehavior,
+				CbnForm.Validatable,
+				CbnForm.DynamicElement
+			],
+			
+			// API methods:
+			
+			/**
+			 * Changes the currently selected date (optional) and resets the calendar view.
+			 *
+			 * @param {String|Date|Moment|null} [date] The date to set. Optional.
+			 */
+			reset: function (date) {
+				this._setDate(date);
+			},
+			
+			/**
+			 * Sets the date to today.
+			 */
+			setNow: function () {
+				self._setDate(moment());
+			},
+			
+			/**
+			 * Clears the selection.
+			 */
+			clear: function () {
+				this._setDate(null);
+			},
+			
+			_stopFocusingPlease: function(event) {
+				event.preventDefault();
+			},
+			
+			/**
+			 * Called when the date value is changed and displays the new time.
+			 */
+			_displayTime: function(date, format) {
+				if (this._noDisplayedValueReformatting)
+					return;
+				// changed the date displayed inside the calendar
+				if (!date) date = moment()
+				this._timeHour = date.get("hour");
+				this._timeMinute = date.get("minute");
+			},
+			
+			/**
+			 * Called when the user changed the time.
+			 */
+			_timeSelected: function(hour, minute) {
+				var datetime = moment(self._date);
+				datetime.set("hour", hour);
+				datetime.set("minute", minute);
+				datetime.set("second", 0);
+				
+				this._noDisplayedValueReformatting = true;
+				try {
+					this._setDate(datetime);
+				} finally {
+					this._noDisplayedValueReformatting = false;
+				}
+			}
+			
+		});
+		
+	})(window.Cbn);
+
+</script>
