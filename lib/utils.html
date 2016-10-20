@@ -321,6 +321,30 @@
 						this.compareFormattedDates(range1[1], range2[1], withTime);
 				}
 				return false; // else: not equal
+			},
+			
+			/**
+			 * Detects whether a mobile device is running for setting input's type="date".
+			 * 
+			 * Caches the results.
+			 * 
+			 * @return {Boolean} True if the user agent is a mobile device.
+			 */
+			detectMobileDevice: function() {
+				if (this._mobileDeviceDetected !== undefined)
+					return this._mobileDeviceDetected;
+				
+				var isDateInputSupported = function(){
+					var elem = document.createElement('input');
+					elem.setAttribute('type', 'date');
+					elem.value = 'foo';
+					return (elem.type == 'date' && elem.value != 'foo');
+				}
+				var isMobile = /mobile/i.test(navigator.userAgent);
+				var media = window.matchMedia("only screen and (max-width: 760px)");
+				this._mobileDeviceDetected = (isMobile || media.matches) && isDateInputSupported();
+				console.log(this._mobileDeviceDetected);
+				return this._mobileDeviceDetected;
 			}
 			
 		};

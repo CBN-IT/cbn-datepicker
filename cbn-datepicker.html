@@ -23,9 +23,19 @@ Usage:
 
 <dom-module id="cbn-datepicker">
 	<template>
+		<style>
+			#dateInput {
+				position: absolute;
+				display: block;
+				top: 0; bottom:0; left:0; right: 0;
+				opacity: 0;
+				z-index: 99;
+			}
+		</style>
 		<style include="cbn-datepicker-styles-private"></style>
 		
-		<input id="input" placeholder$="[[placeholder]]" title="[[title]]" 
+		<input type="date" id="dateInput" on-change="_dateInputChanged" />
+		<input id="input" placeholder$="[[placeholder]]" title="[[title]]"
 			   on-focus="open" on-tap="open" autocomplete="off"
 			   on-keypress="_inputKeyPress" on-input="_displayValueChanged"
 			   value="[[_displayValue]]" />
@@ -76,7 +86,7 @@ Usage:
 					type: String,
 					value: ''
 				},
-				
+
 				/**
 				 * Always disable date range values for this input.
 				 */
@@ -140,12 +150,23 @@ Usage:
 				_calendarView: { type: String, value: 'days' },
 				
 				/**
+				 * Contains the inner input's type, either "text" or "date" (for mobile devices).
+				 */
+				_inputType: {
+					type: String,
+					value: function() {
+						return (scope.DatePicker.Utils.detectMobileDevice() ?
+								"date" : "text");
+					}
+				},
+				
+				/**
 				 * The element that should retain the focus.
 				 */
 				focusTarget: {
 					type: Object,
 					value: function() { //noinspection JSUnresolvedVariable
-						return ( this.$ && this.$.input ? this.$.input : this ); }
+						return ( this.$ && this.$.dateInput ? this.$.dateInput : this ); }
 				}
 				
 			},
@@ -215,10 +236,17 @@ Usage:
 				this.close();
 			},
 			
+			_elementClicked: function() {
+				console.log("click!");
+				this.$.input.focus();
+			},
+			
 			/**
 			 * Opens up the calendar.
 			 */
 			open: function() {
+				if (this._inputType == 'date')
+					return;
 				if (this._open){
 					return;
 				}
@@ -236,7 +264,7 @@ Usage:
 			close: function() {
 				this._open = false;
 			},
-			
+
 			/**
 			 * Changes the time portion of the selected date.
 			 */
@@ -358,6 +386,14 @@ Usage:
 				
 				// restore the selection
 				input.setSelectionRange(start, end);
+			},
+			
+			/**
+			 * Called when the virtual type=date input is changed.
+			 */
+			_dateInputChanged: function(event) {
+				var date = (event.target.value ? moment(event.target.value) : null);
+				this._setDate(date);
 			},
 			
 			/**
