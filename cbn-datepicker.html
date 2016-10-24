@@ -140,7 +140,7 @@ Usage:
 				 * The moment.js object that defines the current time picker value.
 				 */
 				_time: {
-					type: Object,
+					type: Object, value: null,
 					observer: '_timePicked'
 				},
 				
@@ -268,17 +268,16 @@ Usage:
 			 * Changes the time portion of the selected date.
 			 */
 			_setTime: function (time) {
-				var datetime = self._date || moment();
-				if (time == null) {
-					datetime.set("hour", 0);
-					datetime.set("minute", 0);
-					datetime.set("second", 0);
-				} else {
-					datetime.set("hour", time.get("hour"));
-					datetime.set("minute", time.get("minute"));
-					datetime.set("second", time.get("second"));
+				console.log('time changed', this._date, this._time);
+				if (!time && !this._date) {
+					this._setDate(null);
+					return;
 				}
-				
+				var datetime = (this._date ? moment(this._date) : moment());
+				if (this.withTime) {
+					// only replace the time part
+					scope.DatePicker.Utils.copyTime(datetime, time);
+				}
 				this._setDate(datetime);
 			},
 			
@@ -322,7 +321,18 @@ Usage:
 			 */
 			_calendarDateChanged: function() {
 				if (this._settingCalendarDate) return;
-				this._setDate(this._calendarDate);
+				console.log('calendar changed', this._calendarDate, this._time);
+				var datetime = (this._calendarDate ? moment(this._calendarDate) : null);
+				if (!datetime && this._time) {
+					datetime = moment();
+				}
+				if (datetime) {
+					if (this.withTime) {
+						// keep the time part
+						scope.DatePicker.Utils.copyTime(datetime, this._time);
+					}
+					this._setDate(datetime);
+				}
 				
 				// [commented] only close if the calendar view hasn't changed while selecting the date
 				// if (!event.detail.viewChanged)

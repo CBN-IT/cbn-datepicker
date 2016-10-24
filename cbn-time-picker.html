@@ -125,14 +125,16 @@ Usage:
 				 * Stores the selected hour.
 				 */
 				_timeHour: {
-					type: Number
+					type: Number,
+					value: ''
 				},
 				
 				/**
 				 * Stores the selected minute.
 				 */
 				_timeMinute: {
-					type: Number
+					type: Number,
+					value: ''
 				}
 			},
 			
@@ -183,9 +185,13 @@ Usage:
 				if (this._noDisplayedValueReformatting)
 					return;
 				// changed the date displayed inside the calendar
-				if (!date) date = moment()
-				this._timeHour = date.get("hour");
-				this._timeMinute = date.get("minute");
+				if (!date) {
+					this._timeHour = '';
+					this._timeMinute = '';
+				} else {
+					this._timeHour = date.get("hour");
+					this._timeMinute = date.get("minute");
+				}
 			},
 			
 			/**
@@ -193,9 +199,14 @@ Usage:
 			 */
 			_timeSelected: function(hour, minute) {
 				var datetime = moment(self._date);
-				datetime.set("hour", hour);
-				datetime.set("minute", minute);
-				datetime.set("second", 0);
+				if (hour == '' && minute == '') {
+					datetime = null;
+				}
+				if (datetime) {
+					datetime.set("hour", hour);
+					datetime.set("minute", minute);
+					datetime.set("second", 0);
+				}
 				
 				this._noDisplayedValueReformatting = true;
 				try {

@@ -108,6 +108,21 @@
 			},
 			
 			/**
+			 * Copies the time portion from a moment object to another.
+			 * 
+			 * @param {moment} dest The destination object.
+			 * @param {moment|null} src The source moment object.
+			 */
+			copyTime: function(dest, src) {
+				var hour = (src ? src.get('hour') : 0);
+				var minute = (src ? src.get('minute') : 0);
+				var second = (src ? src.get('second') : 0);
+				dest.set('hour', hour);
+				dest.set('minute', minute);
+				dest.set('second', second);
+			},
+			
+			/**
 			 * Takes an arbitrary moment object and limits it using the specified `minDate` and `maxDate` values.
 			 * 
 			 * If it is outside the bounds, it returns the unaltered object, otherwise it returns a clone of the 
