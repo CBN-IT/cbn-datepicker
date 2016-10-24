@@ -237,7 +237,6 @@ Usage:
 			},
 			
 			_elementClicked: function() {
-				console.log("click!");
 				this.$.input.focus();
 			},
 			
@@ -270,7 +269,6 @@ Usage:
 			 */
 			_setTime: function (time) {
 				var datetime = self._date || moment();
-				console.log("TIME", time);
 				if (time == null) {
 					datetime.set("hour", 0);
 					datetime.set("minute", 0);

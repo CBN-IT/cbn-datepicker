@@ -6,6 +6,8 @@
 	
 	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
 	
+	<link rel="import" href="../../polymer-reflection/polymer-reflection.html">
+	<link rel="import" href="../../cbn-form/elements/polymer-elements.html">
 	<link rel="import" href="../../cbn-form/cbn-form.html">
 	<link rel="import" href="../../iron-input/iron-input.html">
 	
@@ -72,6 +74,17 @@
 				"label": "Paper DatePicker (required)",
 				"type": "date",
 				"defaultValue": "+15d",
+				"validation": {
+					"required": true
+				},
+				"autoValidate": true
+			},
+			{
+				"name": "time1",
+				"label": "DatePicker + Time Picker",
+				"type": "date",
+				"format": "DD.MM.YYYY HH:mm",
+				"withTime": true,
 				"validation": {
 					"required": true
 				},

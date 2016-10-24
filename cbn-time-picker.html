@@ -53,6 +53,8 @@ Usage:
 				step="1" min="9" max="20"
 				class="slider-input"
 				value="{{_timeHour}}"
+				on-cbn-form-register="_stopInnerEventPropagation"
+				on-value-changed="_stopInnerEventPropagation"
 				no-label-float>
 			</paper-input>
 			<div class="cap">:</div>
@@ -62,6 +64,8 @@ Usage:
 				step="5" min="0" max="55"
 				class="slider-input"
 				value="{{_timeMinute}}"
+				on-cbn-form-register="_stopInnerEventPropagation"
+				on-value-changed="_stopInnerEventPropagation"
 				no-label-float>
 			</paper-input>
 
