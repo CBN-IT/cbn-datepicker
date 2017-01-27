@@ -354,7 +354,7 @@
 					elem.setAttribute('type', 'date');
 					elem.value = 'foo';
 					return (elem.type == 'date' && elem.value != 'foo');
-				}
+				};
 				var isMobile = /mobile/i.test(navigator.userAgent);
 				var media = window.matchMedia("only screen and (max-width: 760px)");
 				this._mobileDeviceDetected = (isMobile || media.matches) && isDateInputSupported();
