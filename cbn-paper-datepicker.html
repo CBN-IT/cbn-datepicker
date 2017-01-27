@@ -49,6 +49,7 @@ style this element.
 							focusable-ancestor="cbn-paper-datepicker"
 							validation="[[validation]]" validation-order="[[validationOrder]]" 
 							validation-type="[[validationType]]" default-validation-message="[[defaultValidationMessage]]"
+							is-native-input="{{isNativeInput}}"
 				></cbn-datepicker>
 			
 			<template is="dom-if" if="[[errorMessage]]">
@@ -141,6 +142,14 @@ style this element.
 				value: "left bottom"
 			},
 			
+			/**
+			 * Use the native input or the custome calendar.
+			 * @default autodetected, true if mobile
+			 */
+			isNativeInput: {
+				type: Boolean
+				
+			},
 			
 			_ariaLabelledBy: {
 				type: String

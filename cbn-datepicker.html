@@ -31,10 +31,13 @@ Usage:
 				opacity: 0;
 				z-index: 99;
 			}
+			[hidden] {
+				display: none !important;
+			}
 		</style>
 		<style include="cbn-datepicker-styles-private"></style>
 		
-		<input type="date" id="dateInput" on-change="_dateInputChanged" />
+		<input type="date" id="dateInput" on-change="_dateInputChanged" hidden$="{{!isNativeInput}}" />
 		<input id="input" placeholder$="[[placeholder]]" title="[[title]]"
 			   on-focus="open" on-tap="open" autocomplete="off"
 			   on-keypress="_inputKeyPress" on-input="_displayValueChanged"
@@ -150,13 +153,13 @@ Usage:
 				_calendarView: { type: String, value: 'days' },
 				
 				/**
-				 * Contains the inner input's type, either "text" or "date" (for mobile devices).
+				 * Use the native input or the custome calendar.
+				 * @default autodetected, true if mobile
 				 */
-				_inputType: {
-					type: String,
+				isNativeInput: {
+					type: Boolean,
 					value: function() {
-						return (scope.DatePicker.Utils.detectMobileDevice() ?
-								"date" : "text");
+						return scope.DatePicker.Utils.detectMobileDevice()
 					}
 				},
 				
@@ -244,7 +247,7 @@ Usage:
 			 * Opens up the calendar.
 			 */
 			open: function() {
-				if (this._inputType == 'date')
+				if (this.isNativeInput)
 					return;
 				if (this._open){
 					return;
@@ -268,7 +271,7 @@ Usage:
 			 * Changes the time portion of the selected date.
 			 */
 			_setTime: function (time) {
-				console.log('time changed', this._date, this._time);
+				//console.log('time changed', this._date, this._time);
 				if (!time && !this._date) {
 					this._setDate(null);
 					return;
@@ -321,7 +324,7 @@ Usage:
 			 */
 			_calendarDateChanged: function() {
 				if (this._settingCalendarDate) return;
-				console.log('calendar changed', this._calendarDate, this._time);
+				//console.log('calendar changed', this._calendarDate, this._time);
 				var datetime = (this._calendarDate ? moment(this._calendarDate) : null);
 				if (!datetime && this._time) {
 					datetime = moment();
