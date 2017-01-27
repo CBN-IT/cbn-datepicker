@@ -198,7 +198,7 @@ Usage:
 								"label": "An curent",
 								"style": "color: #4285f4",
 								"referenceDate": "selected",
-								"date": [ "=1d =1m", "+1y =0m =0d" ]
+								"date": [ "=1d =0m", "+1y =0m =0d" ]
 							}
 						];
 					}
@@ -340,6 +340,7 @@ Usage:
 			 */
 			close: function() {
 				this._open = false;
+				this.focusTarget.blur();
 			},
 			
 			/**
