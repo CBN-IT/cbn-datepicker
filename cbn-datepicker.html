@@ -1,0 +1,147 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../datetime-picker/overlay-date-picker.html">
+
+<dom-module id="cbn-datepicker">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      overlay-date-picker {
+        --datetime-input: {
+          margin: 10px 0 0 0;
+          width: 100px;
+          border-bottom: 1px solid #737373;
+          padding: 20px 10px 0 10px;
+        };
+      }
+    </style>
+    <overlay-date-picker id="datePicker" value="{{timestamp}}" native="{{native}}" no-overlap></overlay-date-picker>
+  </template>
+
+  <script>
+      class CbnDatepicker extends Polymer.Element {
+          static get is() {
+              return 'cbn-datepicker';
+          }
+
+          static get properties() {
+              return {
+                  timestamp: {
+                      type: Number,
+                      observer: "changedTimeStamp"
+                  },
+                  value: {
+                      type: String,
+                      observer: "changedValue",
+                      notify: true
+                  },
+                  defaultValue: {
+                      type: String,
+                      observer: "changedDefaultValue"
+                  },
+                  minDate: {
+                      type: String
+                  },
+                  maxDate: {
+                      type: String,
+                      observer: "changedValue"
+                  },
+
+                  native: {
+                      type: Boolean,
+                      value: function () {
+                          const ua = window.navigator.userAgent;
+                          return (/[mM]obi/i.test(ua) || /[tT]ablet/i.test(ua) || /[aA]ndroid/i.test(ua));
+                      }
+                  }
+              };
+          }
+
+          static get observers() {
+              return [
+                  'changedMinMax(minDate,"min")',
+                  'changedMinMax(maxDate, "max")'
+              ]
+          }
+
+          changedMinMax(variable, name){
+              console.log(this.parseDate(variable));
+              this.$.datePicker[name] = this.parseDate(variable).format();
+          }
+
+          changedTimeStamp() {
+              this.value = moment(this.timestamp).format("YYYY-MM-DD");
+          }
+
+          changedValue() {
+              if (moment(this.timestamp).format("YYYY-MM-DD") != this.value) {
+                  this.timestamp = new moment(this.value).valueOf();
+              }
+          }
+
+          changedDefaultValue() {
+              this.timestamp = this.parseDate(this.defaultValue).valueOf();
+          }
+
+          parseDate(dateStr, format, referenceDate) {
+              let date = null;
+              if (dateStr != null) {
+                  if (typeof dateStr === "string") {
+                      let shortands = {
+                          'm': 'months',
+                          'd': 'days',
+                          'y': 'years'
+                      };
+                      let pattern = /([+=-])([+-]?[0-9]+)\s*([a-z]+)/ig;
+                      let matches = pattern.exec(dateStr);
+                      if (matches) { // it's a relative date
+                          if (!referenceDate) referenceDate = moment();
+                          date = moment(referenceDate).startOf("day");
+                          while (matches) {
+                              let op = matches[1];
+                              let value = parseInt(matches[2], 10);
+                              let name = matches[3];
+                              if (shortands.hasOwnProperty(name.toLowerCase())) {
+                                  name = shortands[name.toLowerCase()];
+                              }
+                              switch (op) {
+                                  case '+':
+                                      date.add(value, name);
+                                      break;
+                                  case '-':
+                                      date.subtract(value, name);
+                                      break;
+                                  case '=':
+                                      if (name == 'days') {
+                                          name = 'date';
+                                      }
+                                      date.set(name, value);
+                                      break;
+                              }
+                              matches = pattern.exec(dateStr);
+                          }
+
+                      } else {
+                          if (format === 'moment') {
+                              // invalid value, should have been a Moment object
+                              return null;
+                          }
+                          date = moment(dateStr, format);
+                      }
+                  } else {
+                      date = moment(dateStr);
+                  }
+              }
+              if (date && !date.isValid())
+                  date = null;
+              return date;
+          }
+
+
+      }
+
+      window.customElements.define(CbnDatepicker.is, CbnDatepicker);
+  </script>
+</dom-module>
