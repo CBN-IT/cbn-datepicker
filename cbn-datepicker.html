@@ -9,15 +9,6 @@
       :host {
         display: block;
       }
-
-      overlay-date-picker {
-        --datetime-input: {
-          margin: 10px 0 0 0;
-          width: 100px;
-          border-bottom: 1px solid #737373;
-          padding: 20px 10px 0 10px;
-        };
-      }
     </style>
       <paper-input-container always-float-label attr-for-value="value">
           <label slot="label">{{label}}</label>
@@ -38,6 +29,9 @@
                       observer: "changedTimeStamp"
                   },
                   name: {
+                      type: String
+                  },
+                  label: {
                       type: String
                   },
                   value: {
@@ -86,11 +80,13 @@
           changedValue() {
               if (moment(this.timestamp).format("YYYY-MM-DD") != this.value) {
                   this.timestamp = new moment(this.value).valueOf();
+                  this.$.datePicker.confirm();
               }
           }
 
           changedDefaultValue() {
               this.timestamp = this.parseDate(this.defaultValue).valueOf();
+              this.$.datePicker.confirm();
           }
 
           parseDate(dateStr, format, referenceDate) {
