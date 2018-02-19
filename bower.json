@@ -3,7 +3,7 @@
   "main": "cbn-datepicker.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
-    "datetime-picker": "fooloomanzoo/datetime-picker#2.5.4",
+    "datetime-picker": "fooloomanzoo/datetime-picker#2.5.5",
     "paper-input": "PolymerElements/paper-input#^2.0.0"
 
   },
