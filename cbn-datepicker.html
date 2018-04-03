@@ -12,7 +12,7 @@
     </style>
       <paper-input-container always-float-label attr-for-value="value">
           <label slot="label">{{label}}</label>
-          <overlay-date-picker id="datePicker" slot="input" class="paper-input-input" value="{{timestamp}}" native="{{native}}" no-overlap></overlay-date-picker>
+          <overlay-date-picker id="datePicker" slot="input" auto-confirm class="paper-input-input" value="{{timestamp}}" native="{{native}}" vertical-align="auto" horizontal-align="auto" ></overlay-date-picker>
       </paper-input-container>
   </template>
 
@@ -47,8 +47,7 @@
                       type: String
                   },
                   maxDate: {
-                      type: String,
-                      observer: "changedValue"
+                      type: String
                   },
 
                   native: {
@@ -69,7 +68,6 @@
           }
 
           changedMinMax(variable, name){
-              console.log(this.parseDate(variable));
               this.$.datePicker[name] = this.parseDate(variable).format();
           }
 
@@ -78,15 +76,20 @@
           }
 
           changedValue() {
-              if (moment(this.timestamp).format("YYYY-MM-DD") != this.value) {
+              let formatedValue = this.parseDate(this.value).format("YYYY-MM-DD");
+              if(this.value !== formatedValue){
+                    this.value = formatedValue;
+                    return;
+              }
+              if (moment(this.timestamp).format("YYYY-MM-DD") !== this.value) {
                   this.timestamp = new moment(this.value).valueOf();
-                  this.$.datePicker.confirm();
+                  // this.$.datePicker.confirm();
               }
           }
 
           changedDefaultValue() {
-              this.timestamp = this.parseDate(this.defaultValue).valueOf();
-              this.$.datePicker.confirm();
+              // this.timestamp = this.parseDate(this.defaultValue).valueOf();
+              // this.$.datePicker.confirm();
           }
 
           parseDate(dateStr, format, referenceDate) {
