@@ -10,9 +10,9 @@
         display: block;
       }
     </style>
-      <paper-input-container always-float-label attr-for-value="value">
+        <paper-input-container always-float-label attr-for-value="value" invalid="{{invalid}}">
           <label slot="label">{{label}}</label>
-          <overlay-date-picker id="datePicker" slot="input" auto-confirm class="paper-input-input" value="{{timestamp}}" native="{{native}}" vertical-align="auto" horizontal-align="auto" ></overlay-date-picker>
+            <overlay-date-picker id="datePicker" slot="input" auto-confirm class="paper-input-input" value="{{timestamp}}" required="{{required}}" native="{{native}}" vertical-align="auto" horizontal-align="auto"></overlay-date-picker>
       </paper-input-container>
   </template>
 
@@ -56,6 +56,13 @@
                           const ua = window.navigator.userAgent;
                           return (/[mM]obi/i.test(ua) || /[tT]ablet/i.test(ua) || /[aA]ndroid/i.test(ua));
                       }
+                    },
+                    required: {
+                        type: Boolean,
+                        value: false
+                    },
+                    invalid: {
+                        type: Boolean
                   }
               };
           }
@@ -72,8 +79,11 @@
           }
 
           changedTimeStamp() {
+                if(this.timestamp !== undefined){
               this.value = moment(this.timestamp).format("YYYY-MM-DD");
           }
+                this.validate();
+            }
 
           changedValue() {
               let formatedValue = this.parseDate(this.value).format("YYYY-MM-DD");
@@ -83,12 +93,11 @@
               }
               if (moment(this.timestamp).format("YYYY-MM-DD") !== this.value) {
                   this.timestamp = new moment(this.value).valueOf();
-                  // this.$.datePicker.confirm();
               }
           }
 
           changedDefaultValue() {
-              // this.timestamp = this.parseDate(this.defaultValue).valueOf();
+                this.timestamp = this.parseDate(this.defaultValue).valueOf();
               // this.$.datePicker.confirm();
           }
 
@@ -146,6 +155,13 @@
               return date;
           }
 
+            validate(){
+                setTimeout(function(){
+                    this.$.datePicker.validate();
+                    this.invalid = !this.$.datePicker.validate();
+                }.bind(this));
+                return !this.invalid;
+            }
 
       }
 
