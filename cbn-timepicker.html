@@ -1,9 +1,9 @@
 <link rel="import" href="../polymer/polymer-element.html">
-<link rel="import" href="../datetime-picker/overlay-date-picker.html">
+<link rel="import" href="../datetime-picker/overlay-datetime-picker.html">
 <link rel="import" href="../paper-input/paper-input-container.html">
 
 <script type="text/javascript" src="../moment/min/moment.min.js"></script>
-<dom-module id="cbn-datepicker">
+<dom-module id="cbn-timepicker">
   <template>
     <style>
       :host {
@@ -11,15 +11,15 @@
       }
     </style>
         <paper-input-container always-float-label attr-for-value="value" invalid="{{invalid}}">
-          <label slot="label">{{label}}</label>
-            <overlay-date-picker id="datePicker" slot="input" auto-confirm class="paper-input-input" value="{{timestamp}}" required="{{required}}" native="{{native}}" vertical-align="auto" horizontal-align="auto"></overlay-date-picker>
+            <label slot="label">{{label}}</label>
+            <overlay-datetime-picker id="datePicker" slot="input" auto-confirm class="paper-input-input" value="{{timestamp}}" required="{{required}}" native="{{native}}" vertical-align="auto" horizontal-align="auto"></overlay-datetime-picker>
       </paper-input-container>
   </template>
 
   <script>
-      class CbnDatepicker extends Polymer.Element {
+      class CbnTimepicker extends Polymer.Element {
           static get is() {
-              return 'cbn-datepicker';
+              return 'cbn-timepicker';
           }
 
           static get properties() {
@@ -79,24 +79,24 @@
           }
 
           changedTimeStamp() {
-                if(this.timestamp !== undefined){
-              this.value = moment(this.timestamp).format("YYYY-MM-DD");
+            if(this.timestamp !== undefined){
+                    this.value = moment(this.timestamp).format("YYYY-MM-DD");
                 } else if(this.value !== ""){
                     this.value = "";
-          }
-                this.validate();
             }
+            this.validate();
+          }
 
           changedValue() {
               if(this.value === undefined || this.value === ""){
                   this.timestamp = undefined;
               } else{
-              let formatedValue = this.parseDate(this.value).format("YYYY-MM-DD");
+                  let formatedValue = this.parseDate(this.value).format("YYYY-MM-DD HH:mm");
               if(this.value !== formatedValue){
                     this.value = formatedValue;
                     return;
               }
-              if (moment(this.timestamp).format("YYYY-MM-DD") !== this.value) {
+              if (moment(this.timestamp).format("YYYY-MM-DD HH:mm") !== this.value) {
                   this.timestamp = new moment(this.value).valueOf();
               }
           }
@@ -171,6 +171,6 @@
 
       }
 
-      window.customElements.define(CbnDatepicker.is, CbnDatepicker);
+      window.customElements.define(CbnTimepicker.is, CbnTimepicker);
   </script>
 </dom-module>
