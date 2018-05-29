@@ -80,7 +80,7 @@
 
           changedTimeStamp() {
             if(this.timestamp !== undefined){
-                    this.value = moment(this.timestamp).format("YYYY-MM-DD");
+                    this.value = moment(this.timestamp).format("YYYY-MM-DD HH:mm");
                 } else if(this.value !== ""){
                     this.value = "";
             }
