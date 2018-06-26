@@ -4,8 +4,6 @@
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
     "datetime-picker": "fooloomanzoo/datetime-picker#2.8.5",
-    "input-picker-pattern": "fooloomanzoo/input-picker-pattern#2.2.8",
-    "paper-input": "PolymerElements/paper-input#^2.0.0",
     "moment": "^2.19.3"
 
   },
