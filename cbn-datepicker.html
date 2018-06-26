@@ -9,8 +9,13 @@
       :host {
         display: block;
       }
+            overlay-date-picker{
+                --input-padding: 0;
+                --input-border-width: 0;
+                --input-field-padding: 0;
+            }
     </style>
-        <paper-input-container always-float-label attr-for-value="value" invalid="{{invalid}}">
+        <paper-input-container always-float-label attr-for-value="value" invalid="{{invalid}}" no-label-float="{{noLabelFloat}}">
           <label slot="label">{{label}}</label>
             <overlay-date-picker id="datePicker" slot="input" auto-confirm class="paper-input-input" value="{{timestamp}}" required="{{required}}" native="{{native}}" vertical-align="auto" horizontal-align="auto"></overlay-date-picker>
       </paper-input-container>
@@ -63,6 +68,10 @@
                     },
                     invalid: {
                         type: Boolean
+                    },
+                    noLabelFloat: {
+                        type: Boolean,
+                        value: false
                   }
               };
           }
@@ -80,10 +89,12 @@
 
           changedTimeStamp() {
                 if(this.timestamp !== undefined){
-              this.value = moment(this.timestamp).format("YYYY-MM-DD");
+                    console.log(this.timestamp, new Date(this.timestamp));
+                    console.log(arguments);
+                    this.value = moment(this.timestamp).format("YYYY-MM-DD");
                 } else if(this.value !== ""){
                     this.value = "";
-          }
+                }
                 this.validate();
             }
 
@@ -96,6 +107,7 @@
                     this.value = formatedValue;
                     return;
               }
+                    console.log(this.value, moment(this.timestamp).format("YYYY-MM-DD"), formatedValue);
               if (moment(this.timestamp).format("YYYY-MM-DD") !== this.value) {
                   this.timestamp = new moment(this.value).valueOf();
               }
