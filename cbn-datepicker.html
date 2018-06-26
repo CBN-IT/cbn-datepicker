@@ -89,8 +89,6 @@
 
           changedTimeStamp() {
                 if(this.timestamp !== undefined){
-                    console.log(this.timestamp, new Date(this.timestamp));
-                    console.log(arguments);
                     this.value = moment(this.timestamp).format("YYYY-MM-DD");
                 } else if(this.value !== ""){
                     this.value = "";
@@ -101,22 +99,23 @@
           changedValue() {
               if(this.value === undefined || this.value === ""){
                   this.timestamp = undefined;
+                  this.$.datePicker.confirm();
               } else{
               let formatedValue = this.parseDate(this.value).format("YYYY-MM-DD");
               if(this.value !== formatedValue){
                     this.value = formatedValue;
                     return;
               }
-                    console.log(this.value, moment(this.timestamp).format("YYYY-MM-DD"), formatedValue);
               if (moment(this.timestamp).format("YYYY-MM-DD") !== this.value) {
                   this.timestamp = new moment(this.value).valueOf();
+                  this.$.datePicker.confirm();
               }
           }
           }
 
           changedDefaultValue() {
                 this.timestamp = this.parseDate(this.defaultValue).valueOf();
-              // this.$.datePicker.confirm();
+              this.$.datePicker.confirm();
           }
 
           parseDate(dateStr, format, referenceDate) {
