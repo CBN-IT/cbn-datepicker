@@ -17,7 +17,9 @@
     </style>
         <paper-input-container always-float-label attr-for-value="value" invalid="{{invalid}}" no-label-float="{{noLabelFloat}}">
           <label slot="label">{{label}}</label>
-            <overlay-date-picker id="datePicker" slot="input" auto-confirm class="paper-input-input" value="{{timestamp}}" required="{{required}}" native="{{native}}" vertical-align="auto" horizontal-align="auto"></overlay-date-picker>
+            <overlay-date-picker id="datePicker" slot="input" class="paper-input-input" confirmed-date="{{value}}"
+                                 required="{{required}}" native="{{native}}" vertical-align="auto"
+                                 horizontal-align="auto"></overlay-date-picker>
       </paper-input-container>
   </template>
 
@@ -29,10 +31,6 @@
 
           static get properties() {
               return {
-                  timestamp: {
-                      type: Number,
-                      observer: "changedTimeStamp"
-                  },
                   name: {
                       type: String
                   },
@@ -45,8 +43,7 @@
                       notify: true
                   },
                   defaultValue: {
-                      type: String,
-                      observer: "changedDefaultValue"
+                        type: String
                   },
                   minDate: {
                       type: String
@@ -87,15 +84,6 @@
               this.$.datePicker[name] = this.parseDate(variable).format();
           }
 
-          changedTimeStamp() {
-                if(this.timestamp !== undefined){
-                    this.value = moment(this.timestamp).format("YYYY-MM-DD");
-                } else if(this.value !== ""){
-                    this.value = "";
-                }
-                this.validate();
-            }
-
           changedValue() {
               if(this.value === undefined || this.value === ""){
                   this.timestamp = undefined;
@@ -104,19 +92,11 @@
               let formatedValue = this.parseDate(this.value).format("YYYY-MM-DD");
               if(this.value !== formatedValue){
                     this.value = formatedValue;
-                    return;
-              }
-              if (moment(this.timestamp).format("YYYY-MM-DD") !== this.value) {
-                  this.timestamp = new moment(this.value).valueOf();
-                  this.$.datePicker.confirm();
-              }
-          }
-          }
-
-          changedDefaultValue() {
-                this.timestamp = this.parseDate(this.defaultValue).valueOf();
               this.$.datePicker.confirm();
           }
+                }
+            }
+
 
           parseDate(dateStr, format, referenceDate) {
               let date = null;
