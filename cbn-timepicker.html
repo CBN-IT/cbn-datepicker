@@ -114,13 +114,15 @@
                       let shortands = {
                           'm': 'months',
                           'd': 'days',
-                          'y': 'years'
+                          'y': 'years',
+                          'h': 'hours',
+                          'M': 'minutes'
                       };
                       let pattern = /([+=-])([+-]?[0-9]+)\s*([a-z]+)/ig;
                       let matches = pattern.exec(dateStr);
                       if (matches) { // it's a relative date
                           if (!referenceDate) referenceDate = moment();
-                          date = moment(referenceDate).startOf("day");
+                          date = moment(referenceDate);
                           while (matches) {
                               let op = matches[1];
                               let value = parseInt(matches[2], 10);
@@ -136,7 +138,7 @@
                                       date.subtract(value, name);
                                       break;
                                   case '=':
-                                      if (name == 'days') {
+                                      if (name === 'days') {
                                           name = 'date';
                                       }
                                       date.set(name, value);
